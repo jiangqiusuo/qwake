@@ -1,0 +1,139 @@
+---
+import TerminalBlock from "./TerminalBlock.astro";
+import { content, GITHUB_URL, NPM_URL, locales, type Locale } from "../data/site";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = content[locale];
+---
+
+<main>
+  <section class="hero wrap">
+    <div>
+      <p class="eyebrow">{t.hero.eyebrow}</p>
+      <h1>{t.hero.title}</h1>
+      <p class="lead">{t.hero.body}</p>
+      <div class="actions">
+        <a class="button primary" href="#install">{t.hero.primary}</a>
+        <a class="button" href={GITHUB_URL}>{t.hero.secondary}</a>
+      </div>
+    </div>
+    <TerminalBlock code={t.terminal} />
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>{t.featuresTitle}</h2>
+      <p class="section-lead">{t.featuresBody}</p>
+      <div class="grid">
+        {t.features.map((feature: { title: string; body: string }) => (
+          <article class="card">
+            <h3>{feature.title}</h3>
+            <p>{feature.body}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap split">
+      <div>
+        <h2>{t.installTitle}</h2>
+        <p class="section-lead">{t.installBody}</p>
+      </div>
+      <TerminalBlock code={t.installCode} label="Install commands" />
+    </div>
+  </section>
+
+  <section id="schedule">
+    <div class="wrap split">
+      <div>
+        <h2>{t.scheduleTitle}</h2>
+        <p class="section-lead">{t.scheduleBody}</p>
+        <p class="callout">{t.warning}</p>
+      </div>
+      <TerminalBlock code={t.scheduleCode} label="Schedule commands" />
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap split">
+      <div>
+        <h2>{t.verifyTitle}</h2>
+        <p class="section-lead">{t.verifyBody}</p>
+      </div>
+      <TerminalBlock code={t.verifyCode} label="Verification commands" />
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap split">
+      <div>
+        <h2>{t.blogTitle}</h2>
+        <p class="section-lead">{t.blogBody}</p>
+        <div class="actions">
+          <a class="button primary" href={t.blogHref}>{t.blogCta}</a>
+        </div>
+      </div>
+      <div class="card">
+        <h3>macOS · Linux · Windows</h3>
+        <p>LaunchAgent, cron/systemd timers, and Task Scheduler setup paths for Qwake.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap split">
+      <div>
+        <h2>{t.seoTitle}</h2>
+        <ol class="steps">
+          {t.steps.map((step: string) => <li>{step}</li>)}
+        </ol>
+      </div>
+      <div class="card link-card">
+        <h3>{t.resourcesTitle}</h3>
+        <p><a href={GITHUB_URL}>{t.repositoryLabel}</a></p>
+        <p><a href={NPM_URL}>{t.npmLabel}</a></p>
+        <p><a href={GITHUB_URL}>{t.readmeLabel}</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <h2>{t.faqTitle}</h2>
+      <div class="faq">
+        {t.faqs.map((item: { q: string; a: string }) => (
+          <details>
+            <summary>{item.q}</summary>
+            <p>{item.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="wrap">
+      <h2>{t.ctaTitle}</h2>
+      <p>{t.ctaBody}</p>
+      <div class="actions centered">
+        <a class="button primary" href={NPM_URL}>npm install -g qwake</a>
+        <a class="button" href={GITHUB_URL}>GitHub</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap footer-inner">
+    <span>{t.footer}</span>
+    <span>
+      <a href={locales.en.path}>English</a> · <a href={locales["zh-CN"].path}>简体中文</a>
+    </span>
+  </div>
+</footer>

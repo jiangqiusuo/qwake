@@ -1,0 +1,44 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import LandingPage from "../../components/LandingPage.astro";
+import { content, GITHUB_URL, NPM_URL } from "../../data/site";
+
+const locale = "zh-CN";
+const t = content[locale];
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Qwake",
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "macOS, Linux, Windows",
+    description: t.description,
+    url: "https://qwake.dev/zh-CN/",
+    downloadUrl: NPM_URL,
+    codeRepository: GITHUB_URL,
+    license: "https://www.apache.org/licenses/LICENSE-2.0"
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: t.faqs.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.a
+      }
+    }))
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "安装 Qwake Claude Code 定时唤醒",
+    step: t.steps.map((step) => ({ "@type": "HowToStep", text: step }))
+  }
+];
+---
+
+<BaseLayout locale={locale} title={t.title} description={t.description} canonicalPath="/zh-CN/" jsonLd={jsonLd}>
+  <LandingPage locale={locale} />
+</BaseLayout>

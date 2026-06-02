@@ -1,0 +1,75 @@
+---
+import { content, GITHUB_URL, locales, type Locale } from "../data/site";
+import "../styles/global.css";
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  canonicalPath: string;
+  jsonLd: unknown[];
+}
+
+const { locale, title, description, canonicalPath, jsonLd } = Astro.props;
+const t = content[locale];
+const siteUrl = Astro.site?.toString().replace(/\/$/, "") ?? "https://qwake.dev";
+const canonical = `${siteUrl}${canonicalPath}`;
+const gaId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID;
+const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
+---
+
+<!doctype html>
+<html lang={locales[locale].htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    {gscVerification && <meta name="google-site-verification" content={gscVerification} />}
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="en" href={`${siteUrl}${locales.en.path}`} />
+    <link rel="alternate" hreflang="zh-CN" href={`${siteUrl}${locales["zh-CN"].path}`} />
+    <link rel="alternate" hreflang="x-default" href={`${siteUrl}${locales.en.path}`} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Qwake" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    {
+      gaId && (
+        <>
+          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
+          <script
+            is:inline
+            set:html={`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');`}
+          />
+        </>
+      )
+    }
+  </head>
+  <body>
+    <header>
+      <nav class="wrap">
+        <a class="brand" href={locales[locale].path} aria-label="Qwake home">Qwake</a>
+        <div class="navlinks">
+          <a href="#features">{t.nav.features}</a>
+          <a href="#install">{t.nav.install}</a>
+          <a href="#schedule">{t.nav.schedule}</a>
+          <a href={locale === "en" ? "/blog/use-qwake-on-macos-windows-linux/" : "/zh-CN/blog/use-qwake-on-macos-windows-linux/"}>{t.nav.blog}</a>
+          <a href="#faq">{t.nav.faq}</a>
+          <a href={GITHUB_URL}>{t.nav.github}</a>
+        </div>
+        <div class="langs">
+          <a aria-current={locale === "en" ? "page" : undefined} href="/">EN</a>
+          <a aria-current={locale === "zh-CN" ? "page" : undefined} href="/zh-CN/">中文</a>
+        </div>
+      </nav>
+    </header>
+    <slot />
+  </body>
+</html>

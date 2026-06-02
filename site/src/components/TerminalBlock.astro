@@ -1,0 +1,17 @@
+---
+interface Props {
+  code: string;
+  label?: string;
+}
+
+const { code, label = "Terminal example" } = Astro.props;
+---
+
+<div class="terminal" aria-label={label}>
+  <div class="terminal-bar">
+    <span class="dot"></span>
+    <span class="dot"></span>
+    <span class="dot"></span>
+  </div>
+  <pre><code>{code}</code></pre>
+</div>

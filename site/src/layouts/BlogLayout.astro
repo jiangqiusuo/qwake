@@ -1,0 +1,82 @@
+---
+import { content, GITHUB_URL, locales, type Locale } from "../data/site";
+import "../styles/global.css";
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  canonicalPath: string;
+  alternatePath: string;
+  jsonLd: unknown[];
+}
+
+const { locale, title, description, canonicalPath, alternatePath, jsonLd } = Astro.props;
+const siteUrl = Astro.site?.toString().replace(/\/$/, "") ?? "https://qwake.dev";
+const canonical = `${siteUrl}${canonicalPath}`;
+const t = content[locale];
+const gaId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID;
+const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
+---
+
+<!doctype html>
+<html lang={locales[locale].htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    {gscVerification && <meta name="google-site-verification" content={gscVerification} />}
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang={locale === "en" ? "zh-CN" : "en"} href={`${siteUrl}${alternatePath}`} />
+    <link rel="alternate" hreflang={locale} href={canonical} />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Qwake" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    {
+      gaId && (
+        <>
+          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
+          <script
+            is:inline
+            set:html={`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');`}
+          />
+        </>
+      )
+    }
+  </head>
+  <body>
+    <header>
+      <nav class="wrap">
+        <a class="brand" href={locales[locale].path}>Qwake</a>
+        <div class="navlinks">
+          <a href={locales[locale].path}>{locale === "en" ? "Home" : "首页"}</a>
+          <a href={GITHUB_URL}>GitHub</a>
+        </div>
+        <div class="langs">
+          <a aria-current={locale === "en" ? "page" : undefined} href="/blog/use-qwake-on-macos-windows-linux/">EN</a>
+          <a aria-current={locale === "zh-CN" ? "page" : undefined} href="/zh-CN/blog/use-qwake-on-macos-windows-linux/">中文</a>
+        </div>
+      </nav>
+    </header>
+    <main class="article-main">
+      <article class="article wrap">
+        <p class="eyebrow">{locale === "en" ? "Qwake guide" : "Qwake 指南"}</p>
+        <h1>{title}</h1>
+        <p class="lead">{description}</p>
+        <slot />
+      </article>
+    </main>
+    <footer>
+      <div class="wrap footer-inner">
+        <span>{t.footer}</span>
+        <span><a href={locales[locale].path}>{locale === "en" ? "Back home" : "返回首页"}</a></span>
+      </div>
+    </footer>
+  </body>
+</html>
