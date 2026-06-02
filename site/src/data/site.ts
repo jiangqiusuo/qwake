@@ -1,5 +1,5 @@
 export const SITE_URL = "https://qwake.dev";
-export const GITHUB_URL = "https://github.com/your-org/qwake";
+export const GITHUB_URL = "https://github.com/jiangqiusuo/qwake";
 export const NPM_URL = "https://www.npmjs.com/package/qwake";
 
 export type Locale = "en" | "zh-CN";
