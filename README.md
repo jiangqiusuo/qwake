@@ -8,21 +8,6 @@ It sends a tiny, user-triggered wake message to a local AI coding CLI such as Cl
 
 Qwake does not bypass limits, manage credentials, upload source code, or require an official Claude/Codex account. It simply calls the agent command that already works on your machine. If your `claude` CLI is routed to GLM, OpenRouter, Bedrock, Vertex, or another provider, Qwake uses that existing setup.
 
-## MVP Focus
-
-The MVP is focused on system-level wake-window orchestration:
-
-```bash
-qwake doctor
-qwake wake claude
-qwake schedule install claude --times 06:05,11:10,16:15,21:20
-qwake schedule status claude
-qwake schedule run claude
-qwake schedule logs claude
-```
-
-Task queue commands still exist as experimental helpers, but they are not the main product path for the MVP.
-
 ## Install
 
 For users:
@@ -55,7 +40,7 @@ Use the built-in mock agent:
 pnpm dev -- init
 pnpm dev -- doctor
 pnpm dev -- wake mock
-pnpm dev -- probe mock
+pnake dev -- probe mock
 ```
 
 Expected output:
@@ -93,13 +78,13 @@ qwake schedule install claude --times 06:05,11:10,16:15,21:20
 Qwake wraps your installed `claude` command. It does not care whether Claude Code is using an official Anthropic account, an API key, or a third-party provider configured inside Claude Code.
 
 ```bash
-pnpm dev -- wake claude
+qwake wake claude
 ```
 
 If you want to pass Claude Code's optional budget guard:
 
 ```bash
-pnpm dev -- wake claude --budget-usd 0.10
+qwake wake claude --budget-usd 0.10
 ```
 
 By default Qwake does not set `--max-budget-usd`. That keeps it compatible with third-party provider plans where USD budget semantics may not match the actual quota system.
@@ -107,7 +92,7 @@ By default Qwake does not set `--max-budget-usd`. That keeps it compatible with 
 ## Wake Codex
 
 ```bash
-pnpm dev -- wake codex
+qwake wake codex
 ```
 
 The default Codex wake command uses non-interactive `codex exec` with read-only sandboxing and no approval prompts.
@@ -130,22 +115,19 @@ agents:
 Then run:
 
 ```bash
-pnpm dev -- wake custom
+qwake wake custom
 ```
 
 ## Token and Quota Behavior
 
 ```text
-doctor  = zero token; checks local commands only
-wake    = tiny live request; may spend a small amount of provider quota
+doctor      = zero token; checks local commands only
+wake        = tiny live request; may spend a small amount of provider quota
 wake --smart = tiny live request only when the local 5h+buffer guard is due
-probe   = tiny live request; may spend a small amount of provider quota
-add     = zero token; experimental local task record
-run     = real task execution; can spend normal coding-agent quota
-resume  = real task continuation; can spend normal coding-agent quota
+probe       = tiny live request; may spend a small amount of provider quota
 ```
 
-Use `wake` when you intentionally want to start or verify a provider quota window. Do not use `run` or `resume` for wake-only workflows.
+Use `wake` when you intentionally want to start or verify a provider quota window.
 
 ## Scheduling
 
@@ -154,11 +136,11 @@ Qwake does not stay resident. Scheduling is handled by the operating system.
 On macOS, Qwake can install a LaunchAgent:
 
 ```bash
-pnpm dev -- schedule install claude --times 06:05,11:10,16:15,21:20
-pnpm dev -- schedule status claude
-pnpm dev -- schedule run claude
-pnpm dev -- schedule logs claude
-pnpm dev -- schedule uninstall claude
+qwake schedule install claude --times 06:05,11:10,16:15,21:20
+qwake schedule status claude
+qwake schedule run claude
+qwake schedule logs claude
+qwake schedule uninstall claude
 ```
 
 The install command creates:
@@ -215,24 +197,6 @@ On macOS/Linux, cron can run Qwake at fixed wall-clock times:
 
 Those cron entries use the same smart guard: if the previous successful wake is still inside `5h + 5m`, Qwake logs `status=skipped` and avoids the live provider call. If you specifically want every cron trigger to call the provider, omit `--smart`.
 
-For local development without a global install, point cron at your repo command:
-
-```cron
-5 6 * * * cd /Users/wangxb/Documents/codex项目 && pnpm dev -- wake claude --smart
-```
-
-That cron expression means:
-
-```text
-minute: 5, 10, 15, 20
-hour:   6, 11, 16, 21
-day:    every day
-month:  every month
-weekday: every weekday
-```
-
-So it checks the configured agent at 06:05, 11:10, 16:15, and 21:20 every day.
-
 On macOS, launchd is usually more reliable than cron for laptop workflows because it can run after wake from sleep. Qwake's `schedule install` command uses launchd.
 
 ## Local Data
@@ -243,14 +207,11 @@ By default Qwake writes only to:
 ~/.qwake/
   config.yaml
   wakes/
-  tasks/
 ```
 
 Wake and probe commands do not write into your project directory. Smart wake state is stored under `~/.qwake/wakes/<agent>.json`.
 
 ## Commands
-
-Primary MVP commands:
 
 ```bash
 qwake init
@@ -267,26 +228,6 @@ qwake schedule logs claude
 qwake schedule uninstall claude
 ```
 
-Experimental task-continuation commands:
-
-```bash
-qwake add --goal "Continue migration" --agent mock
-qwake run mock --limit --goal "Demo limit handling"
-qwake status
-qwake resume next
-qwake due --run
-```
-
 ## Project Status
 
-This is an early open-source MVP. The first supported real CLIs are Codex and Claude Code, with `mock` and `custom` for no-login testing and provider experiments.
-
-## Release and Open Source
-
-See [docs/RELEASE.md](docs/RELEASE.md) for the full flow:
-
-- local usage
-- npm packaging and publishing
-- GitHub open-source setup
-- landing page deployment
-- suggested slogans and positioning
+This is an early open-source project. The first supported real CLIs are Codex and Claude Code, with `mock` and `custom` for no-login testing and provider experiments.
