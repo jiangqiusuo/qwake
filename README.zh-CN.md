@@ -28,7 +28,7 @@ qwake schedule logs claude
 用户安装：
 
 ```bash
-npm install -g qwake
+npm install -g @sysiphus/qwake
 qwake --help
 ```
 
@@ -83,7 +83,7 @@ qwake schedule logs claude
 如果已经从 npm 安装，则直接使用：
 
 ```bash
-npm install -g qwake
+npm install -g @sysiphus/qwake
 qwake doctor
 qwake schedule install claude --times 06:05,11:10,16:15,21:20
 ```

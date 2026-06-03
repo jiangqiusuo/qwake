@@ -1,6 +1,6 @@
 export const SITE_URL = "https://qwake.dev";
 export const GITHUB_URL = "https://github.com/jiangqiusuo/qwake";
-export const NPM_URL = "https://www.npmjs.com/package/qwake";
+export const NPM_URL = "https://www.npmjs.com/package/@sysiphus/qwake";
 
 export type Locale = "en" | "zh-CN";
 
@@ -65,7 +65,7 @@ Logs: ~/.qwake/logs/claude.log`,
     ],
     installTitle: "Install",
     installBody: "Install globally after npm publish, or build from the repository during development.",
-    installCode: `npm install -g qwake
+    installCode: `npm install -g @sysiphus/qwake
 qwake init
 qwake doctor
 qwake wake claude`,
@@ -173,7 +173,7 @@ Logs: ~/.qwake/logs/claude.log`,
     ],
     installTitle: "安装",
     installBody: "发布到 npm 后可全局安装；开发阶段也可以从仓库构建。",
-    installCode: `npm install -g qwake
+    installCode: `npm install -g @sysiphus/qwake
 qwake init
 qwake doctor
 qwake wake claude`,

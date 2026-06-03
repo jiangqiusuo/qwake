@@ -1,10 +1,13 @@
 {
-  "name": "qwake",
+  "name": "@sysiphus/qwake",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "0.1.0",
   "description": "Local-first quota window waker for AI coding agents.",
   "type": "module",
   "bin": {
-    "qwake": "./dist/cli.js"
+    "qwake": "dist/cli.js"
   },
   "files": [
     "dist",

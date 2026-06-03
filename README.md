@@ -28,7 +28,7 @@ Task queue commands still exist as experimental helpers, but they are not the ma
 For users:
 
 ```bash
-npm install -g qwake
+npm install -g @sysiphus/qwake
 qwake --help
 ```
 
@@ -83,7 +83,7 @@ qwake schedule logs claude
 If you installed from npm, use the same commands without `npm install -g .`:
 
 ```bash
-npm install -g qwake
+npm install -g @sysiphus/qwake
 qwake doctor
 qwake schedule install claude --times 06:05,11:10,16:15,21:20
 ```
