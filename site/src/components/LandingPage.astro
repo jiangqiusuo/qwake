@@ -10,7 +10,7 @@ const { locale } = Astro.props;
 const t = content[locale];
 ---
 
-<main>
+<main id="main-content">
   <section class="hero wrap">
     <div>
       <p class="eyebrow">{t.hero.eyebrow}</p>
@@ -60,7 +60,7 @@ const t = content[locale];
     </div>
   </section>
 
-  <section>
+  <section id="verify">
     <div class="wrap split">
       <div>
         <h2>{t.verifyTitle}</h2>
@@ -70,7 +70,7 @@ const t = content[locale];
     </div>
   </section>
 
-  <section>
+  <section id="guide">
     <div class="wrap split">
       <div>
         <h2>{t.blogTitle}</h2>
@@ -86,7 +86,7 @@ const t = content[locale];
     </div>
   </section>
 
-  <section>
+  <section id="how-it-works">
     <div class="wrap split">
       <div>
         <h2>{t.seoTitle}</h2>
@@ -122,7 +122,7 @@ const t = content[locale];
       <h2>{t.ctaTitle}</h2>
       <p>{t.ctaBody}</p>
       <div class="actions centered">
-        <a class="button primary" href={NPM_URL}>npm install -g qwake</a>
+        <a class="button primary" href={NPM_URL}>npm install -g @sysiphus/qwake</a>
         <a class="button" href={GITHUB_URL}>GitHub</a>
       </div>
     </div>

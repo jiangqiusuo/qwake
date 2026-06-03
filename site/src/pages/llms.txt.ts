@@ -1,3 +1,5 @@
+import { GITHUB_URL, NPM_URL } from "../data/site";
+
 export function GET({ site }: { site: URL }) {
   const origin = site.toString().replace(/\/$/, "");
   return new Response(
@@ -12,8 +14,8 @@ Scheduled wakes use smart mode by default. Qwake stores the last successful wake
 Important URLs:
 - Home: ${origin}/
 - Chinese: ${origin}/zh-CN/
-- GitHub: https://github.com/your-org/qwake
-- npm: https://www.npmjs.com/package/qwake
+- GitHub: ${GITHUB_URL}
+- npm: ${NPM_URL}
 
 Core commands:
 - qwake doctor

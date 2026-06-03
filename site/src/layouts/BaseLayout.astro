@@ -14,6 +14,7 @@ const { locale, title, description, canonicalPath, jsonLd } = Astro.props;
 const t = content[locale];
 const siteUrl = Astro.site?.toString().replace(/\/$/, "") ?? "https://qwake.dev";
 const canonical = `${siteUrl}${canonicalPath}`;
+const ogImage = `${siteUrl}/og-image.svg`;
 const gaId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID;
 const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
 ---
@@ -36,13 +37,20 @@ const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:site_name" content="Qwake" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <meta name="twitter:image" content={ogImage} />
+    {jsonLd.map((schema) => (
+      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    ))}
     {
       gaId && (
         <>
+          <link rel="preconnect" href="https://www.googletagmanager.com" />
           <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
           <script
             is:inline
@@ -53,9 +61,14 @@ const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
     }
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <header>
-      <nav class="wrap">
+      <nav class="wrap" aria-label="Main">
         <a class="brand" href={locales[locale].path} aria-label="Qwake home">Qwake</a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true" />
+        <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle navigation">
+          <span class="hamburger"></span>
+        </label>
         <div class="navlinks">
           <a href="#features">{t.nav.features}</a>
           <a href="#install">{t.nav.install}</a>

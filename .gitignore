@@ -7,3 +7,4 @@ coverage/
 .agentqueue/
 *.tgz
 docs/
+.astro/

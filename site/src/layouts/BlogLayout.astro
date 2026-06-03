@@ -14,6 +14,7 @@ interface Props {
 const { locale, title, description, canonicalPath, alternatePath, jsonLd } = Astro.props;
 const siteUrl = Astro.site?.toString().replace(/\/$/, "") ?? "https://qwake.dev";
 const canonical = `${siteUrl}${canonicalPath}`;
+const ogImage = `${siteUrl}/og-image.svg`;
 const t = content[locale];
 const gaId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID;
 const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
@@ -31,16 +32,26 @@ const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
     <link rel="canonical" href={canonical} />
     <link rel="alternate" hreflang={locale === "en" ? "zh-CN" : "en"} href={`${siteUrl}${alternatePath}`} />
     <link rel="alternate" hreflang={locale} href={canonical} />
+    <link rel="alternate" hreflang="x-default" href={locale === "en" ? canonical : `${siteUrl}${alternatePath}`} />
     <meta property="og:type" content="article" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:site_name" content="Qwake" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    {jsonLd.map((schema) => (
+      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    ))}
     {
       gaId && (
         <>
+          <link rel="preconnect" href="https://www.googletagmanager.com" />
           <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
           <script
             is:inline
@@ -51,9 +62,14 @@ const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
     }
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <header>
-      <nav class="wrap">
-        <a class="brand" href={locales[locale].path}>Qwake</a>
+      <nav class="wrap" aria-label="Main">
+        <a class="brand" href={locales[locale].path} aria-label="Qwake home">Qwake</a>
+        <input type="checkbox" id="nav-toggle" class="nav-toggle" aria-hidden="true" />
+        <label for="nav-toggle" class="nav-toggle-label" aria-label="Toggle navigation">
+          <span class="hamburger"></span>
+        </label>
         <div class="navlinks">
           <a href={locales[locale].path}>{locale === "en" ? "Home" : "首页"}</a>
           <a href={GITHUB_URL}>GitHub</a>
@@ -64,7 +80,7 @@ const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
         </div>
       </nav>
     </header>
-    <main class="article-main">
+    <main id="main-content" class="article-main">
       <article class="article wrap">
         <p class="eyebrow">{locale === "en" ? "Qwake guide" : "Qwake 指南"}</p>
         <h1>{title}</h1>

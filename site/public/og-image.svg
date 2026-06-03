@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f6f8f4"/>
+  <!-- Terminal window -->
+  <rect x="60" y="120" width="540" height="390" rx="12" fill="#0d1714" stroke="#20342e" stroke-width="1"/>
+  <!-- Terminal dots -->
+  <circle cx="90" cy="152" r="7" fill="#e46d55"/>
+  <circle cx="112" cy="152" r="7" fill="#e4bc55"/>
+  <circle cx="134" cy="152" r="7" fill="#65bf70"/>
+  <!-- Terminal text -->
+  <text x="85" y="210" font-family="ui-monospace,monospace" font-size="18" fill="#d8f5e7">
+    <tspan x="85" dy="0">$ qwake doctor</tspan>
+    <tspan x="85" dy="32">claude: ok (claude)</tspan>
+    <tspan x="85" dy="32">mock: ok (mock)</tspan>
+    <tspan x="85" dy="52">$ qwake schedule install claude \</tspan>
+    <tspan x="85" dy="32">  --times 06:05,11:10,16:15,21:20</tspan>
+    <tspan x="85" dy="32">Installed com.qwake.claude</tspan>
+  </text>
+  <!-- Brand -->
+  <text x="660" y="200" font-family="Inter,ui-sans-serif,system-ui,sans-serif" font-weight="800" font-size="96" fill="#13211c">Qwake</text>
+  <!-- Tagline -->
+  <text x="660" y="280" font-family="Inter,ui-sans-serif,system-ui,sans-serif" font-weight="600" font-size="32" fill="#5c6d65">AI Coding Quota</text>
+  <text x="660" y="322" font-family="Inter,ui-sans-serif,system-ui,sans-serif" font-weight="600" font-size="32" fill="#5c6d65">Window Waker</text>
+  <!-- Accent line -->
+  <rect x="660" y="350" width="80" height="4" rx="2" fill="#176b5b"/>
+  <!-- Description -->
+  <text x="660" y="400" font-family="Inter,ui-sans-serif,system-ui,sans-serif" font-size="20" fill="#5c6d65">Wake your AI coding quota</text>
+  <text x="660" y="428" font-family="Inter,ui-sans-serif,system-ui,sans-serif" font-size="20" fill="#5c6d65">before you need it.</text>
+  <!-- Bottom badges -->
+  <text x="660" y="490" font-family="ui-monospace,monospace" font-size="16" fill="#176b5b">npm install -g @sysiphus/qwake</text>
+</svg>

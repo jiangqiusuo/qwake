@@ -11,7 +11,15 @@ const jsonLd = [
     headline: title,
     description,
     author: { "@type": "Organization", name: "Qwake" },
-    mainEntityOfPage: "https://qwake.dev/blog/use-qwake-on-macos-windows-linux/"
+    mainEntityOfPage: "https://qwake.dev/blog/use-qwake-on-macos-windows-linux/",
+    datePublished: "2026-05-30T00:00:00+08:00",
+    dateModified: "2026-06-01T00:00:00+08:00",
+    image: "https://qwake.dev/og-image.svg",
+    publisher: {
+      "@type": "Organization",
+      name: "Qwake",
+      url: "https://qwake.dev"
+    }
   },
   {
     "@context": "https://schema.org",
@@ -43,7 +51,7 @@ const jsonLd = [
   </p>
 
   <h2>Install Qwake</h2>
-  <pre><code>npm install -g qwake
+  <pre><code>npm install -g @sysiphus/qwake
 qwake init
 qwake doctor
 qwake wake mock</code></pre>

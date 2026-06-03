@@ -1,0 +1,16 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout locale="en" title="404 - Page Not Found | Qwake" description="The page you are looking for does not exist." canonicalPath="/404" jsonLd={[]}>
+  <main id="main-content" style="text-align:center; padding:120px 0;">
+    <h1 style="font-size:clamp(48px,8vw,80px);margin:0 0 16px;">404</h1>
+    <p class="lead" style="max-width:480px;margin:0 auto 32px;">
+      The page you are looking for does not exist. It may have been moved or deleted.
+    </p>
+    <div class="actions centered">
+      <a class="button primary" href="/">Back to home</a>
+      <a class="button" href="/zh-CN/">中文首页</a>
+    </div>
+  </main>
+</BaseLayout>
