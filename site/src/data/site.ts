@@ -1,4 +1,4 @@
-export const SITE_URL = "https://qwake.dev";
+export const SITE_URL = "https://qwake.top";
 export const GITHUB_URL = "https://github.com/jiangqiusuo/qwake";
 export const NPM_URL = "https://www.npmjs.com/package/@sysiphus/qwake";
 
