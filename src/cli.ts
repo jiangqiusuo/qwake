@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { readFileSync } from "node:fs";
 import {
   addTask,
   doctor,
@@ -20,12 +21,16 @@ import { DEFAULT_BUFFER_MINUTES, DEFAULT_WINDOW_MINUTES } from "./config.js";
 import { getQwakeHome, getConfigPath } from "./paths.js";
 import type { AgentName } from "./types.js";
 
+const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+  version: string;
+};
+
 const program = new Command();
 
 program
   .name("qwake")
   .description("Local-first quota window waker for AI coding agents.")
-  .version("0.1.0")
+  .version(packageJson.version)
   .option("--verbose", "show extra diagnostic information");
 
 program
