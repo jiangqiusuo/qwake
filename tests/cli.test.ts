@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -15,6 +15,16 @@ async function runCli(args: string[], home: string) {
 }
 
 describe("CLI", () => {
+  it("prints the package version", async () => {
+    const home = await mkdtemp(path.join(tmpdir(), "qwake-cli-"));
+    const packageJson = JSON.parse(await readFile(path.resolve("package.json"), "utf8")) as {
+      version: string;
+    };
+
+    const version = await runCli(["--version"], home);
+    expect(version.stdout.trim()).toBe(packageJson.version);
+  });
+
   it("initializes config and queues a mock limit task", async () => {
     const home = await mkdtemp(path.join(tmpdir(), "qwake-cli-"));
     const init = await runCli(["init"], home);
