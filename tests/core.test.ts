@@ -1,4 +1,4 @@
-import { access, chmod, mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -21,11 +21,14 @@ describe("core wake", () => {
 
   it("applies the default hard timeout to custom wake calls", async () => {
     const home = process.env.QWAKE_HOME!;
-    const binDir = path.join(home, "bin");
-    const hangingCommand = path.join(binDir, "hanging-agent");
-    await mkdir(binDir, { recursive: true });
-    await writeFile(hangingCommand, "#!/bin/sh\nsleep 10\n", "utf8");
-    await chmod(hangingCommand, 0o755);
+    const scriptDir = path.join(home, "scripts");
+    const hangingScript = path.join(scriptDir, "hanging-agent.mjs");
+    await mkdir(scriptDir, { recursive: true });
+    await writeFile(
+      hangingScript,
+      "setInterval(() => {}, 1000);\n",
+      "utf8"
+    );
     await writeFile(
       path.join(home, "config.yaml"),
       [
@@ -33,8 +36,8 @@ describe("core wake", () => {
         "retryWindows: ['06:30']",
         "agents:",
         "  custom:",
-        `    command: ${JSON.stringify(hangingCommand)}`,
-        "    args: []",
+        `    command: ${JSON.stringify(process.execPath)}`,
+        `    args: [${JSON.stringify(hangingScript)}]`,
         "    limitPatterns: []"
       ].join("\n"),
       "utf8"
@@ -49,16 +52,27 @@ describe("core wake", () => {
 
   it("skips duplicate wake calls for the same agent", async () => {
     const home = process.env.QWAKE_HOME!;
-    const binDir = path.join(home, "bin");
-    const slowCommand = path.join(binDir, "slow-agent");
+    const scriptDir = path.join(home, "scripts");
+    const slowScript = path.join(scriptDir, "slow-agent.mjs");
     const releaseFile = path.join(home, "release");
-    await mkdir(binDir, { recursive: true });
+    await mkdir(scriptDir, { recursive: true });
     await writeFile(
-      slowCommand,
-      `#!/bin/sh\nwhile [ ! -f ${JSON.stringify(releaseFile)} ]; do sleep 0.05; done\n`,
+      slowScript,
+      [
+        "import { access } from 'node:fs/promises';",
+        "process.stdin.resume();",
+        "const releaseFile = process.argv[2];",
+        "while (true) {",
+        "  try {",
+        "    await access(releaseFile);",
+        "    break;",
+        "  } catch {",
+        "    await new Promise((resolve) => setTimeout(resolve, 50));",
+        "  }",
+        "}"
+      ].join("\n"),
       "utf8"
     );
-    await chmod(slowCommand, 0o755);
     await writeFile(
       path.join(home, "config.yaml"),
       [
@@ -66,8 +80,8 @@ describe("core wake", () => {
         "retryWindows: ['06:30']",
         "agents:",
         "  custom:",
-        `    command: ${JSON.stringify(slowCommand)}`,
-        "    args: []",
+        `    command: ${JSON.stringify(process.execPath)}`,
+        `    args: [${JSON.stringify(slowScript)}, ${JSON.stringify(releaseFile)}]`,
         "    limitPatterns: []"
       ].join("\n"),
       "utf8"

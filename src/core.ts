@@ -93,7 +93,7 @@ export async function probeAgent(input: {
     agent: input.agent,
     config: {
       ...agentConfig,
-      args: getProbeArgs(input.agent, input.budgetUsd)
+      args: buildWakeArgs(input.agent, agentConfig.args, input.budgetUsd)
     },
     cwd: input.projectPath || cwd(),
     input: `Reply with exactly: OK ${wakeNonce()}. Do not inspect files, run tools, or continue any coding task.`,
@@ -151,7 +151,7 @@ export async function wakeAgent(input: {
       agent: input.agent,
       config: {
         ...agentConfig,
-        args: getProbeArgs(input.agent, input.budgetUsd)
+        args: buildWakeArgs(input.agent, agentConfig.args, input.budgetUsd)
       },
       cwd: input.projectPath || cwd(),
       input: `Reply exactly: QWAKE_OK ${wakeNonce()}. Do not inspect files, run tools, or continue any coding task.`,
@@ -274,7 +274,6 @@ function trimOutput(output: string, max = 4000): string {
 function getProbeArgs(agent: AgentName, budgetUsd?: string): string[] {
   if (agent === "claude") {
     const args = [
-      "--print",
       "--no-session-persistence",
       "--tools",
       ""
@@ -286,16 +285,18 @@ function getProbeArgs(agent: AgentName, budgetUsd?: string): string[] {
   }
   if (agent === "codex") {
     return [
-      "exec",
       "--ignore-user-config",
       "--sandbox",
       "read-only",
       "--ephemeral",
       "--skip-git-repo-check",
-      "-"
     ];
   }
   return [];
+}
+
+function buildWakeArgs(agent: AgentName, baseArgs: string[] | undefined, budgetUsd?: string): string[] {
+  return [...(baseArgs || []), ...getProbeArgs(agent, budgetUsd)];
 }
 
 function wakeNonce(): string {
