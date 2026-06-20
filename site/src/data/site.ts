@@ -44,7 +44,7 @@ codex: ok (codex)
 
 $ qwake schedule install claude \\
   --times 06:05,11:10,16:15,21:20
-Installed com.qwake.claude
+Installed schedule
 Logs: ~/.qwake/logs/claude.log`,
     featuresTitle: "Built for quota-window friction",
     featuresBody:
@@ -52,7 +52,7 @@ Logs: ~/.qwake/logs/claude.log`,
     features: [
       {
         title: "System-level scheduling",
-        body: "Install macOS LaunchAgent schedules with one command. Scheduled wakes use smart 5h+buffer skipping by default."
+        body: "Install LaunchAgent, schtasks, or Linux systemd/crontab schedules with one command. Scheduled wakes use smart 5h+buffer skipping by default."
       },
       {
         title: "Provider-neutral",
@@ -93,7 +93,7 @@ qwake schedule logs claude
       "Qwake attempts wake requests and records timestamps. It cannot guarantee provider quota refresh if the machine is off, fully asleep, offline, or rejected by the provider.",
     blogTitle: "Cross-platform setup guide",
     blogBody:
-      "Read the practical guide for macOS LaunchAgent, Linux cron/systemd, and Windows Task Scheduler workflows.",
+      "Read the practical guide for macOS LaunchAgent, Linux systemd/crontab fallback, and Windows Task Scheduler workflows.",
     blogHref: "/blog/use-qwake-on-macos-windows-linux/",
     blogCta: "Read the guide",
     seoTitle: "How Qwake works",
@@ -152,7 +152,7 @@ codex: ok (codex)
 
 $ qwake schedule install claude \\
   --times 06:05,11:10,16:15,21:20
-Installed com.qwake.claude
+Installed schedule
 Logs: ~/.qwake/logs/claude.log`,
     featuresTitle: "为额度窗口的烦人中断而生",
     featuresBody:

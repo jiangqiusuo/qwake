@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.3 (2026-06-20)
+
+### Scheduling
+
+- unified `qwake schedule install/status/run/uninstall` across macOS, Windows, and Linux
+- Windows scheduler support via `schtasks`
+- Linux scheduler support via `systemd --user` with automatic `crontab` fallback
+- local scheduler metadata for cross-platform status and uninstall flows
+
+### Documentation and site
+
+- updated README and website copy to describe the cross-platform scheduler behavior
+- refreshed the macOS/Linux/Windows setup guide to match the built-in scheduler installers
+
 ## 0.1.0 (2026-06-01)
 
 Initial release.

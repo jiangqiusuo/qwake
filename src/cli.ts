@@ -174,7 +174,7 @@ const schedule = program
 
 schedule
   .command("install")
-  .description("Install a macOS LaunchAgent wake schedule.")
+  .description("Install an operating-system wake schedule.")
   .argument("<agent>", "codex, claude, mock, or custom")
   .requiredOption("--times <times>", "comma-separated HH:mm times, e.g. 06:00,11:00,16:00,21:00")
   .option("--budget-usd <amount>", "optional Claude max budget for each wake call")
@@ -197,7 +197,18 @@ schedule
     });
     console.log(`Installed ${result.label}`);
     console.log(`Times: ${result.times.join(", ")}`);
-    console.log(`Plist: ${result.plistPath}`);
+    if (result.plistPath) {
+      console.log(`Plist: ${result.plistPath}`);
+    }
+    if (result.scriptPath) {
+      console.log(`Script: ${result.scriptPath}`);
+    }
+    if (result.servicePath) {
+      console.log(`Service: ${result.servicePath}`);
+    }
+    if (result.timerPath) {
+      console.log(`Timer: ${result.timerPath}`);
+    }
     console.log(`Logs: ${result.logPath}`);
   });
 
@@ -213,7 +224,7 @@ schedule
     }
     for (const item of schedules) {
       console.log(`${item.agent}  ${item.times.join(", ")}  ${item.label}`);
-      console.log(`  ${item.plistPath}`);
+      console.log(`  ${item.plistPath || item.timerPath || item.servicePath || item.scriptPath}`);
     }
   });
 
@@ -245,7 +256,7 @@ schedule
 
 schedule
   .command("run")
-  .description("Trigger an installed wake schedule once through launchd.")
+  .description("Trigger an installed wake schedule once.")
   .argument("<agent>", "codex, claude, mock, or custom")
   .action(async (agentValue: string) => {
     const schedule = await triggerWakeSchedule(parseAgent(agentValue));

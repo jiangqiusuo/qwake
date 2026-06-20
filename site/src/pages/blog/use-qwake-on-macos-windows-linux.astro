@@ -4,7 +4,7 @@ import { SITE_URL } from "../../data/site";
 
 const title = "How to use Qwake on macOS, Linux, and Windows";
 const description =
-  "A practical setup guide for Qwake scheduled wake calls on macOS LaunchAgent, Linux cron/systemd, and Windows Task Scheduler.";
+  "A practical setup guide for Qwake scheduled wake calls on macOS LaunchAgent, Linux systemd with crontab fallback, and Windows Task Scheduler.";
 const jsonLd = [
   {
     "@context": "https://schema.org",
@@ -14,7 +14,7 @@ const jsonLd = [
     author: { "@type": "Organization", name: "Qwake" },
     mainEntityOfPage: `${SITE_URL}/blog/use-qwake-on-macos-windows-linux/`,
     datePublished: "2026-05-30T00:00:00+08:00",
-    dateModified: "2026-06-01T00:00:00+08:00",
+    dateModified: "2026-06-20T00:00:00+08:00",
     image: `${SITE_URL}/og-image.svg`,
     publisher: {
       "@type": "Organization",
@@ -29,7 +29,7 @@ const jsonLd = [
     step: [
       { "@type": "HowToStep", text: "Install Qwake globally." },
       { "@type": "HowToStep", text: "Confirm your local AI coding CLI works." },
-      { "@type": "HowToStep", text: "Install an OS scheduler for your wake times." },
+      { "@type": "HowToStep", text: "Install a schedule for your provider and times." },
       { "@type": "HowToStep", text: "Verify schedule status and logs." }
     ]
   }
@@ -57,93 +57,47 @@ qwake init
 qwake doctor
 qwake wake mock</code></pre>
 
-  <h2>macOS: LaunchAgent, recommended</h2>
+  <h2>One command across platforms</h2>
   <p>
-    The built-in scheduler installer currently targets macOS LaunchAgent. It is better than cron
-    for laptop workflows because launchd integrates with user sessions. Scheduled jobs use smart
-    skipping by default: Qwake only calls the provider after the previous successful wake is older
-    than the configured 5 hour window plus buffer.
+    Qwake keeps the command surface the same across macOS, Linux, and Windows:
   </p>
   <pre><code>qwake schedule install claude --times 06:05,11:10,16:15,21:20
 qwake schedule status claude
 qwake schedule run claude
-qwake schedule logs claude</code></pre>
+qwake schedule logs claude
+qwake schedule uninstall claude</code></pre>
+
+  <h2>macOS: LaunchAgent</h2>
   <p>
-    You can tune the guard with <code>--window-minutes 300 --buffer-minutes 5</code>, or disable it with
-    <code>--no-smart</code> if you intentionally want every scheduled time to call the provider.
+    On macOS, Qwake installs a LaunchAgent. This works well for laptop workflows because launchd
+    is tied to the user session. Scheduled jobs use smart skipping by default: Qwake only calls
+    the provider after the previous successful wake is older than the configured 5 hour window plus
+    buffer.
   </p>
-  <p>Healthy logs look like this:</p>
-  <pre><code>[2026-06-01 09:20:00 +08:00] wake agent=claude status=success exitCode=0 limited=false durationMs=1842 utc=2026-06-01T01:20:00.000Z
-[2026-06-01 11:10:00 +08:00] wake agent=claude status=skipped exitCode=0 limited=false durationMs=3 utc=2026-06-01T03:10:00.000Z nextWakeAt=2026-06-01T06:25:00.000Z</code></pre>
-  <p>
-    <code>schedule run</code> asks launchd to trigger the installed job once, so you can verify the real
-    scheduled path without waiting for the next clock time. On MacBooks, jobs may still run after the
-    lid is closed if macOS has not reached deep sleep, briefly wakes, or is connected to power. Use the
-    log timestamp as the practical source of truth.
-  </p>
-  <p>For low-level launchd inspection:</p>
   <pre><code>launchctl list | rg qwake
 cat ~/Library/LaunchAgents/com.qwake.claude.plist</code></pre>
-  <p>Uninstall:</p>
-  <pre><code>qwake schedule uninstall claude</code></pre>
 
-  <h2>Linux: cron or systemd timer</h2>
+  <h2>Linux: systemd first, cron fallback</h2>
   <p>
-    Qwake does not yet install Linux schedules automatically. Use cron for a simple setup, or a
-    systemd user timer if you want stronger observability.
+    On Linux, Qwake first tries to install a <code>systemd --user</code> service and timer. If the
+    machine does not expose systemd user services, Qwake falls back to <code>crontab</code> and
+    installs equivalent daily entries automatically.
   </p>
-  <pre><code># cron
-5 6 * * * qwake wake claude --smart >> ~/.qwake/logs/claude.log 2>> ~/.qwake/logs/claude.error.log
-10 11 * * * qwake wake claude --smart >> ~/.qwake/logs/claude.log 2>> ~/.qwake/logs/claude.error.log
-15 16 * * * qwake wake claude --smart >> ~/.qwake/logs/claude.log 2>> ~/.qwake/logs/claude.error.log
-20 21 * * * qwake wake claude --smart >> ~/.qwake/logs/claude.log 2>> ~/.qwake/logs/claude.error.log</code></pre>
-  <p>With systemd user timers, run the same command from a user service and inspect it with:</p>
+  <p>With systemd available, inspect the generated units with:</p>
   <pre><code>systemctl --user status qwake-claude.timer
 journalctl --user -u qwake-claude.service</code></pre>
+  <p>On cron-based machines, inspect the installed entries with:</p>
+  <pre><code>crontab -l | grep QWAKE:claude</code></pre>
 
   <h2>Windows: Task Scheduler</h2>
   <p>
-    Qwake does not yet install Windows schedules automatically. After installing with npm, Windows
-    usually creates command shims such as <code>qwake.cmd</code> and <code>qwake.ps1</code> in your npm
-    global bin directory. Find the exact path with:
+    On Windows, Qwake installs daily tasks through <code>schtasks</code>. The same schedule command
+    creates one task per time window and logs the results under <code>~/.qwake/logs</code>.
   </p>
   <pre><code>where qwake
-qwake doctor
-qwake wake claude --smart</code></pre>
-  <p>
-    If <code>where qwake</code> prints a path ending in <code>qwake.cmd</code>, you can point Task Scheduler
-    directly at that file. A wrapper batch file is often easier to debug because you control the log
-    path. Create <code>%USERPROFILE%\qwake-claude.bat</code>:
-  </p>
-  <pre><code>@echo off
-set QWAKE_LOG_DIR=%USERPROFILE%\.qwake\logs
-if not exist "%QWAKE_LOG_DIR%" mkdir "%QWAKE_LOG_DIR%"
-qwake wake claude --smart >> "%QWAKE_LOG_DIR%\claude.log" 2>> "%QWAKE_LOG_DIR%\claude.error.log"</code></pre>
-  <p>Task Scheduler GUI settings:</p>
-  <ul>
-    <li>Create Task, not Basic Task, so multiple triggers are easier to manage.</li>
-    <li>Triggers: add four daily triggers at 06:05, 11:10, 16:15, and 21:20. This is the fixed-time workflow that pairs well with smart mode.</li>
-    <li>Action: start a program.</li>
-    <li>Program/script: <code>%USERPROFILE%\qwake-claude.bat</code>.</li>
-    <li>Start in: <code>%USERPROFILE%</code>.</li>
-    <li>Conditions: enable “Wake the computer to run this task” if you want Windows to try waking from sleep.</li>
-  </ul>
-  <p>
-    If you prefer a pure command-line setup, create four tasks with <code>schtasks</code>:
-  </p>
-  <pre><code>schtasks /Create /TN "Qwake Claude 0605" /SC DAILY /ST 06:05 /TR "%USERPROFILE%\qwake-claude.bat" /F
-schtasks /Create /TN "Qwake Claude 1110" /SC DAILY /ST 11:10 /TR "%USERPROFILE%\qwake-claude.bat" /F
-schtasks /Create /TN "Qwake Claude 1615" /SC DAILY /ST 16:15 /TR "%USERPROFILE%\qwake-claude.bat" /F
-schtasks /Create /TN "Qwake Claude 2120" /SC DAILY /ST 21:20 /TR "%USERPROFILE%\qwake-claude.bat" /F</code></pre>
-  <p>
-    Another valid pattern is interval-based scheduling, for example every 5 hours. This is less aligned
-    with fixed workday windows, but smart mode makes it safe because redundant runs are skipped:
-  </p>
-  <pre><code>schtasks /Create /TN "Qwake Claude Every 5h" /SC HOURLY /MO 5 /TR "%USERPROFILE%\qwake-claude.bat" /F</code></pre>
-  <p>Verify later with:</p>
-  <pre><code>type "%USERPROFILE%\.qwake\logs\claude.log"
-type "%USERPROFILE%\.qwake\logs\claude.error.log"
-schtasks /Query /TN "Qwake Claude 0605" /V /FO LIST</code></pre>
+qwake schedule install claude --times 06:05,11:10,16:15,21:20
+qwake schedule status claude
+schtasks /Query /TN "\Qwake\claude-0605" /V /FO LIST</code></pre>
 
   <h2>Troubleshooting</h2>
   <p>If a scheduled wake did not run, check these first:</p>
@@ -152,7 +106,7 @@ qwake schedule run claude
 qwake schedule logs claude
 qwake doctor</code></pre>
   <p>
-    On macOS with nvm, older schedules may fail with <code>env: node: No such file or directory</code>.
-    Reinstall the schedule with the latest Qwake so LaunchAgent uses the absolute Node path.
+    The same log semantics apply on every platform: <code>success</code>, <code>failed</code>,
+    <code>limited</code>, or <code>skipped</code>.
   </p>
 </BlogLayout>

@@ -30,7 +30,7 @@ qwake wake claude
 qwake wake codex
 ```
 
-Install a daily macOS schedule:
+Install a daily system schedule:
 
 ```bash
 qwake schedule install codex --times 06:05,11:10,16:15,21:20
@@ -65,7 +65,7 @@ qwake schedule uninstall codex
 
 Qwake does not stay resident. Scheduling is handled by the operating system.
 
-On macOS, `schedule install` creates a LaunchAgent:
+On macOS, `schedule install` creates a LaunchAgent. On Windows, it creates daily `schtasks` entries. On Linux, it prefers `systemd --user` service and timer units, then falls back to `crontab` when systemd is unavailable:
 
 ```bash
 qwake schedule install claude --times 06:05,11:10,16:15,21:20
@@ -92,6 +92,22 @@ Scheduled wake calls include a 120-second hard timeout by default:
 ```bash
 qwake schedule install codex --times 06:05,11:10,16:15,21:20 --timeout-seconds 120
 ```
+
+On Windows, you can inspect or remove the generated tasks with:
+
+```bat
+schtasks /Query /TN "\Qwake\codex-0605"
+schtasks /Delete /TN "\Qwake\codex-0605" /F
+```
+
+On Linux with systemd, you can inspect the generated timer with:
+
+```bash
+systemctl --user status qwake-codex.timer
+systemctl --user list-timers | grep qwake
+```
+
+If the machine does not provide `systemd --user`, Qwake falls back to `crontab` and installs the same daily times there.
 
 ## Agents
 

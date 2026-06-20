@@ -4,7 +4,7 @@ import { SITE_URL } from "../../../data/site";
 
 const title = "如何在 macOS、Linux、Windows 上使用 Qwake";
 const description =
-  "一篇实用的 Qwake 跨平台使用指南，覆盖 macOS LaunchAgent、Linux cron/systemd 和 Windows Task Scheduler。";
+  "一篇实用的 Qwake 跨平台使用指南，覆盖 macOS LaunchAgent、Linux systemd 与 crontab fallback、Windows Task Scheduler。";
 const jsonLd = [
   {
     "@context": "https://schema.org",
@@ -14,7 +14,7 @@ const jsonLd = [
     author: { "@type": "Organization", name: "Qwake" },
     mainEntityOfPage: `${SITE_URL}/zh-CN/blog/use-qwake-on-macos-windows-linux/`,
     datePublished: "2026-05-30T00:00:00+08:00",
-    dateModified: "2026-06-01T00:00:00+08:00",
+    dateModified: "2026-06-20T00:00:00+08:00",
     image: `${SITE_URL}/og-image.svg`,
     publisher: {
       "@type": "Organization",
@@ -29,7 +29,7 @@ const jsonLd = [
     step: [
       { "@type": "HowToStep", text: "全局安装 Qwake。" },
       { "@type": "HowToStep", text: "确认本机 AI 编码 CLI 可用。" },
-      { "@type": "HowToStep", text: "为需要的唤醒时间安装系统调度任务。" },
+      { "@type": "HowToStep", text: "为目标 provider 和时间安装调度任务。" },
       { "@type": "HowToStep", text: "通过 status 和 logs 验证结果。" }
     ]
   }
@@ -46,8 +46,9 @@ const jsonLd = [
 >
   <h2>Qwake 能保证什么，不能保证什么</h2>
   <p>
-    Qwake 会通过你本机已有的 CLI 发送极小 wake 请求。它可以验证定时任务是否尝试运行，以及 provider 是否接受了请求。
-    但如果电脑关机、完全深度睡眠、断网，或 provider 拒绝请求，它不能保证额度一定刷新。
+    Qwake 会通过你本机已经可用的 CLI 发送极小的 wake 请求。它可以验证定时任务是否真的执行过，
+    以及 provider 是否接受了请求；但如果机器关机、完全深度睡眠、离线，或者 provider 拒绝请求，
+    它不能保证额度一定刷新。
   </p>
 
   <h2>安装 Qwake</h2>
@@ -56,96 +57,55 @@ qwake init
 qwake doctor
 qwake wake mock</code></pre>
 
-  <h2>macOS：推荐使用 LaunchAgent</h2>
+  <h2>跨平台统一命令</h2>
   <p>
-    当前内置的 schedule installer 主要支持 macOS LaunchAgent。对笔记本工作流来说，它通常比 cron 更适合，
-    因为 launchd 和用户会话集成更好。定时任务默认启用 smart skipping：只有上一次成功 wake 已经超过
-    配置的 5 小时窗口加 buffer 后，Qwake 才会真的调用 provider。
+    Qwake 在 macOS、Linux、Windows 上都保持同一套调度命令：
   </p>
   <pre><code>qwake schedule install claude --times 06:05,11:10,16:15,21:20
 qwake schedule status claude
 qwake schedule run claude
-qwake schedule logs claude</code></pre>
+qwake schedule logs claude
+qwake schedule uninstall claude</code></pre>
+
+  <h2>macOS：LaunchAgent</h2>
   <p>
-    可以用 <code>--window-minutes 300 --buffer-minutes 5</code> 调整 smart guard；如果你明确希望每个定时点都调用
-    provider，可以用 <code>--no-smart</code> 关闭。
+    在 macOS 上，Qwake 会安装 LaunchAgent。对笔记本工作流来说，这通常比 cron 更合适，
+    因为 launchd 和用户会话集成得更好。定时任务默认启用 smart skipping：只有当上一次成功 wake
+    已经超过配置的 5 小时窗口加 buffer 后，Qwake 才会再次真实调用 provider。
   </p>
-  <p>健康日志通常是：</p>
-  <pre><code>[2026-06-01 09:20:00 +08:00] wake agent=claude status=success exitCode=0 limited=false durationMs=1842 utc=2026-06-01T01:20:00.000Z
-[2026-06-01 11:10:00 +08:00] wake agent=claude status=skipped exitCode=0 limited=false durationMs=3 utc=2026-06-01T03:10:00.000Z nextWakeAt=2026-06-01T06:25:00.000Z</code></pre>
-  <p>
-    <code>schedule run</code> 会让 launchd 手动触发一次已安装任务，这样不用等到下一个定时点，也能验证真实的系统调度链路。
-    MacBook 合盖后仍然执行，通常是因为 macOS 尚未进入完全深度睡眠、机器短暂唤醒，或接了外部电源。
-    判断是否执行，以日志时间戳为准。
-  </p>
-  <p>如果想看 launchd 底层状态：</p>
   <pre><code>launchctl list | rg qwake
 cat ~/Library/LaunchAgents/com.qwake.claude.plist</code></pre>
-  <p>卸载：</p>
-  <pre><code>qwake schedule uninstall claude</code></pre>
 
-  <h2>Linux：cron 或 systemd timer</h2>
+  <h2>Linux：优先 systemd，兜底 crontab</h2>
   <p>
-    Qwake 目前还没有自动安装 Linux 调度任务。简单场景可以用 cron；如果需要更好的可观测性，可以用 systemd user timer。
+    在 Linux 上，Qwake 会先尝试安装 <code>systemd --user</code> service 和 timer。
+    如果机器没有可用的 systemd user service，Qwake 会自动 fallback 到 <code>crontab</code>，
+    并安装等价的每日定时条目。
   </p>
-  <pre><code># cron
-5 6 * * * qwake wake claude --smart >> ~/.qwake/logs/claude.log 2>> ~/.qwake/logs/claude.error.log
-10 11 * * * qwake wake claude --smart >> ~/.qwake/logs/claude.log 2>> ~/.qwake/logs/claude.error.log
-15 16 * * * qwake wake claude --smart >> ~/.qwake/logs/claude.log 2>> ~/.qwake/logs/claude.error.log
-20 21 * * * qwake wake claude --smart >> ~/.qwake/logs/claude.log 2>> ~/.qwake/logs/claude.error.log</code></pre>
-  <p>如果用 systemd user timer，可以把同样的命令放进 user service，并用下面命令查看：</p>
+  <p>如果使用 systemd，可用下面命令查看：</p>
   <pre><code>systemctl --user status qwake-claude.timer
 journalctl --user -u qwake-claude.service</code></pre>
+  <p>如果 fallback 到 cron，可用下面命令查看：</p>
+  <pre><code>crontab -l | grep QWAKE:claude</code></pre>
 
   <h2>Windows：Task Scheduler</h2>
   <p>
-    Qwake 目前还没有自动安装 Windows 调度任务。通过 npm 全局安装后，Windows 通常会在 npm 的全局 bin 目录生成
-    <code>qwake.cmd</code> 和 <code>qwake.ps1</code> 这类命令 shim。先用下面命令找到实际路径：
+    在 Windows 上，Qwake 会通过 <code>schtasks</code> 安装每日任务。同一条 schedule 命令会为每个时间点
+    创建一个任务，并把日志写到 <code>~/.qwake/logs</code>。
   </p>
   <pre><code>where qwake
-qwake doctor
-qwake wake claude --smart</code></pre>
-  <p>
-    如果 <code>where qwake</code> 输出的是 <code>qwake.cmd</code> 结尾的路径，可以在任务计划程序里直接指向它。
-    但更推荐写一个 batch wrapper，因为日志路径更容易控制。创建 <code>%USERPROFILE%\qwake-claude.bat</code>：
-  </p>
-  <pre><code>@echo off
-set QWAKE_LOG_DIR=%USERPROFILE%\.qwake\logs
-if not exist "%QWAKE_LOG_DIR%" mkdir "%QWAKE_LOG_DIR%"
-qwake wake claude --smart >> "%QWAKE_LOG_DIR%\claude.log" 2>> "%QWAKE_LOG_DIR%\claude.error.log"</code></pre>
-  <p>Task Scheduler GUI 建议配置：</p>
-  <ul>
-    <li>选择 Create Task，不要选 Basic Task，这样更方便添加多个触发时间。</li>
-    <li>Triggers：添加四个 daily trigger，分别是 06:05、11:10、16:15、21:20。这是固定工作日时间方案，配合 smart mode 使用。</li>
-    <li>Action：start a program。</li>
-    <li>Program/script：<code>%USERPROFILE%\qwake-claude.bat</code>。</li>
-    <li>Start in：<code>%USERPROFILE%</code>。</li>
-    <li>Conditions：如果希望 Windows 尝试从睡眠中唤醒执行任务，可以勾选 “Wake the computer to run this task”。</li>
-  </ul>
-  <p>
-    如果你更喜欢命令行方式，也可以用 <code>schtasks</code> 创建四个任务：
-  </p>
-  <pre><code>schtasks /Create /TN "Qwake Claude 0605" /SC DAILY /ST 06:05 /TR "%USERPROFILE%\qwake-claude.bat" /F
-schtasks /Create /TN "Qwake Claude 1110" /SC DAILY /ST 11:10 /TR "%USERPROFILE%\qwake-claude.bat" /F
-schtasks /Create /TN "Qwake Claude 1615" /SC DAILY /ST 16:15 /TR "%USERPROFILE%\qwake-claude.bat" /F
-schtasks /Create /TN "Qwake Claude 2120" /SC DAILY /ST 21:20 /TR "%USERPROFILE%\qwake-claude.bat" /F</code></pre>
-  <p>
-    也可以做成每 5 小时触发一次的 interval-based schedule。它不如固定工作日时间直观，但 smart mode 会跳过窗口内的重复请求：
-  </p>
-  <pre><code>schtasks /Create /TN "Qwake Claude Every 5h" /SC HOURLY /MO 5 /TR "%USERPROFILE%\qwake-claude.bat" /F</code></pre>
-  <p>后续可以这样验证：</p>
-  <pre><code>type "%USERPROFILE%\.qwake\logs\claude.log"
-type "%USERPROFILE%\.qwake\logs\claude.error.log"
-schtasks /Query /TN "Qwake Claude 0605" /V /FO LIST</code></pre>
+qwake schedule install claude --times 06:05,11:10,16:15,21:20
+qwake schedule status claude
+schtasks /Query /TN "\Qwake\claude-0605" /V /FO LIST</code></pre>
 
   <h2>排障</h2>
-  <p>如果定时唤醒没有执行，先看：</p>
+  <p>如果定时唤醒没有执行，先看这些：</p>
   <pre><code>qwake schedule status claude
 qwake schedule run claude
 qwake schedule logs claude
 qwake doctor</code></pre>
   <p>
-    如果 macOS + nvm 环境下看到 <code>env: node: No such file or directory</code>，说明旧 schedule
-    没拿到 Node 路径。升级到最新版 Qwake 后重新安装 schedule，它会使用绝对 Node 路径。
+    三个平台的日志语义是统一的：<code>success</code>、<code>failed</code>、
+    <code>limited</code>、<code>skipped</code>。
   </p>
 </BlogLayout>

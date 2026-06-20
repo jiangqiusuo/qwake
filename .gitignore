@@ -4,6 +4,10 @@ coverage/
 .DS_Store
 .env
 .npmrc
+.npm-cache/
 *.tgz
 docs/
 .astro/
+.qwake/
+.tmp-qwake-home/
+logs/
