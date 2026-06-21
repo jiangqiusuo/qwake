@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4 (2026-06-21)
+
+### Scheduling
+
+- `qwake schedule install` now accepts multiple agents in one command, for example `codex claude`
+- `qwake schedule run` and `qwake schedule uninstall` also accept multiple agents
+- updated examples and website copy to present the shared Claude Code + Codex workflow directly
+
 ## 0.1.3 (2026-06-20)
 
 ### Scheduling

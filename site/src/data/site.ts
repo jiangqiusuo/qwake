@@ -42,7 +42,7 @@ export const content = {
 claude: ok (claude)
 codex: ok (codex)
 
-$ qwake schedule install claude \\
+$ qwake schedule install codex claude \\
   --times 06:05,11:10,16:15,21:20
 Installed schedule
 Logs: ~/.qwake/logs/claude.log`,
@@ -72,19 +72,19 @@ qwake wake claude`,
     scheduleTitle: "Schedule wake calls",
     scheduleBody:
       "Qwake does not stay resident. It delegates timing to the operating system and uses smart 5h+buffer skipping to avoid redundant provider calls.",
-    scheduleCode: `qwake schedule install claude \\
+    scheduleCode: `qwake schedule install codex claude \\
   --times 06:05,11:10,16:15,21:20
 
-qwake schedule status claude
-qwake schedule run claude
-qwake schedule logs claude`,
+qwake schedule status
+qwake schedule run codex claude
+qwake schedule logs`,
     verifyTitle: "Verify scheduled wakes",
     verifyBody:
       "After installing a schedule, status and logs tell you whether launchd loaded it and whether wake calls succeeded.",
-    verifyCode: `qwake schedule status claude
+    verifyCode: `qwake schedule status
 launchctl list | rg qwake
-qwake schedule run claude
-qwake schedule logs claude
+qwake schedule run codex claude
+qwake schedule logs
 
 # healthy log output
 [2026-06-01 09:20:00 +08:00] wake agent=claude status=success exitCode=0 limited=false durationMs=1842 utc=2026-06-01T01:20:00.000Z
@@ -100,7 +100,7 @@ qwake schedule logs claude
     steps: [
       "Install Qwake globally with npm.",
       "Confirm your local Claude Code, Codex, or custom CLI works.",
-      "Install a schedule for the provider and wall-clock times you care about.",
+      "Install schedules for the agents and wall-clock times you care about.",
       "Inspect logs after scheduled wake attempts."
     ],
     faqTitle: "FAQ",
@@ -150,7 +150,7 @@ qwake schedule logs claude
 claude: ok (claude)
 codex: ok (codex)
 
-$ qwake schedule install claude \\
+$ qwake schedule install codex claude \\
   --times 06:05,11:10,16:15,21:20
 Installed schedule
 Logs: ~/.qwake/logs/claude.log`,
@@ -180,19 +180,19 @@ qwake wake claude`,
     scheduleTitle: "定时唤醒",
     scheduleBody:
       "Qwake 自己不常驻后台。它把定时交给操作系统，并用 5 小时 + buffer 的 smart skipping 避免重复调用 provider。",
-    scheduleCode: `qwake schedule install claude \\
+    scheduleCode: `qwake schedule install codex claude \\
   --times 06:05,11:10,16:15,21:20
 
-qwake schedule status claude
-qwake schedule run claude
-qwake schedule logs claude`,
+qwake schedule status
+qwake schedule run codex claude
+qwake schedule logs`,
     verifyTitle: "确认定时唤醒是否运行",
     verifyBody:
       "安装 schedule 后，可以通过 status 和 logs 确认 launchd 是否已加载，以及 wake 是否成功执行。",
-    verifyCode: `qwake schedule status claude
+    verifyCode: `qwake schedule status
 launchctl list | rg qwake
-qwake schedule run claude
-qwake schedule logs claude
+qwake schedule run codex claude
+qwake schedule logs
 
 # 健康日志输出
 [2026-06-01 09:20:00 +08:00] wake agent=claude status=success exitCode=0 limited=false durationMs=1842 utc=2026-06-01T01:20:00.000Z

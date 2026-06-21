@@ -175,7 +175,7 @@ const schedule = program
 schedule
   .command("install")
   .description("Install an operating-system wake schedule.")
-  .argument("<agent>", "codex, claude, mock, or custom")
+  .argument("<agents...>", "one or more agents: codex, claude, mock, or custom")
   .requiredOption("--times <times>", "comma-separated HH:mm times, e.g. 06:00,11:00,16:00,21:00")
   .option("--budget-usd <amount>", "optional Claude max budget for each wake call")
   .option("--no-smart", "disable smart window skipping for scheduled wakes")
@@ -183,33 +183,21 @@ schedule
   .option("--buffer-minutes <minutes>", "smart wake extra safety buffer", String(DEFAULT_BUFFER_MINUTES))
   .option("--timeout-seconds <seconds>", "hard timeout for each wake call")
   .option("--command <path>", "advanced: executable path for the scheduler")
-  .action(async (agentValue: string, options) => {
-    const agent = parseAgent(agentValue);
-    const result = await installWakeSchedule({
-      agent,
-      times: String(options.times).split(","),
-      budgetUsd: options.budgetUsd,
-      command: options.command,
-      smart: options.smart !== false,
-      windowMinutes: parsePositiveInteger(options.windowMinutes, "window-minutes"),
-      bufferMinutes: parsePositiveInteger(options.bufferMinutes, "buffer-minutes"),
-      timeoutSeconds: parseStrictPositiveInteger(options.timeoutSeconds, "timeout-seconds")
-    });
-    console.log(`Installed ${result.label}`);
-    console.log(`Times: ${result.times.join(", ")}`);
-    if (result.plistPath) {
-      console.log(`Plist: ${result.plistPath}`);
+  .action(async (agentValues: string[], options) => {
+    const agents = parseAgents(agentValues);
+    for (const agent of agents) {
+      const result = await installWakeSchedule({
+        agent,
+        times: String(options.times).split(","),
+        budgetUsd: options.budgetUsd,
+        command: options.command,
+        smart: options.smart !== false,
+        windowMinutes: parsePositiveInteger(options.windowMinutes, "window-minutes"),
+        bufferMinutes: parsePositiveInteger(options.bufferMinutes, "buffer-minutes"),
+        timeoutSeconds: parseStrictPositiveInteger(options.timeoutSeconds, "timeout-seconds")
+      });
+      printInstalledSchedule(result);
     }
-    if (result.scriptPath) {
-      console.log(`Script: ${result.scriptPath}`);
-    }
-    if (result.servicePath) {
-      console.log(`Service: ${result.servicePath}`);
-    }
-    if (result.timerPath) {
-      console.log(`Timer: ${result.timerPath}`);
-    }
-    console.log(`Logs: ${result.logPath}`);
   });
 
 schedule
@@ -231,14 +219,17 @@ schedule
 schedule
   .command("uninstall")
   .description("Uninstall a wake schedule.")
-  .argument("<agent>", "codex, claude, mock, or custom")
-  .action(async (agentValue: string) => {
-    const removed = await removeWakeSchedule(parseAgent(agentValue));
-    if (!removed) {
-      console.log("No wake schedule installed.");
-      return;
+  .argument("<agents...>", "one or more agents: codex, claude, mock, or custom")
+  .action(async (agentValues: string[]) => {
+    const agents = parseAgents(agentValues);
+    for (const agent of agents) {
+      const removed = await removeWakeSchedule(agent);
+      if (!removed) {
+        console.log(`No wake schedule installed for ${agent}.`);
+        continue;
+      }
+      console.log(`Uninstalled ${removed.label}`);
     }
-    console.log(`Uninstalled ${removed.label}`);
   });
 
 schedule
@@ -257,12 +248,15 @@ schedule
 schedule
   .command("run")
   .description("Trigger an installed wake schedule once.")
-  .argument("<agent>", "codex, claude, mock, or custom")
-  .action(async (agentValue: string) => {
-    const schedule = await triggerWakeSchedule(parseAgent(agentValue));
-    console.log(`Triggered ${schedule.label}`);
-    console.log(`Logs: ${schedule.logPath}`);
-    console.log(`Errors: ${schedule.errorLogPath}`);
+  .argument("<agents...>", "one or more agents: codex, claude, mock, or custom")
+  .action(async (agentValues: string[]) => {
+    const agents = parseAgents(agentValues);
+    for (const agent of agents) {
+      const schedule = await triggerWakeSchedule(agent);
+      console.log(`Triggered ${schedule.label}`);
+      console.log(`Logs: ${schedule.logPath}`);
+      console.log(`Errors: ${schedule.errorLogPath}`);
+    }
   });
 
 program
@@ -362,6 +356,29 @@ function parseAgent(value: string): AgentName {
     return value;
   }
   throw new Error(`Unsupported agent "${value}". Use codex, claude, mock, or custom.`);
+}
+
+function parseAgents(values: string[]): AgentName[] {
+  const agents = values.flatMap((value) => value.split(",")).map((value) => parseAgent(value.trim()));
+  return [...new Set(agents)];
+}
+
+function printInstalledSchedule(result: Awaited<ReturnType<typeof installWakeSchedule>>): void {
+  console.log(`Installed ${result.label}`);
+  console.log(`Times: ${result.times.join(", ")}`);
+  if (result.plistPath) {
+    console.log(`Plist: ${result.plistPath}`);
+  }
+  if (result.scriptPath) {
+    console.log(`Script: ${result.scriptPath}`);
+  }
+  if (result.servicePath) {
+    console.log(`Service: ${result.servicePath}`);
+  }
+  if (result.timerPath) {
+    console.log(`Timer: ${result.timerPath}`);
+  }
+  console.log(`Logs: ${result.logPath}`);
 }
 
 function printEvent(input: {

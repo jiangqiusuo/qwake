@@ -61,11 +61,11 @@ qwake wake mock</code></pre>
   <p>
     Qwake keeps the command surface the same across macOS, Linux, and Windows:
   </p>
-  <pre><code>qwake schedule install claude --times 06:05,11:10,16:15,21:20
-qwake schedule status claude
-qwake schedule run claude
-qwake schedule logs claude
-qwake schedule uninstall claude</code></pre>
+  <pre><code>qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
+qwake schedule status
+qwake schedule run codex claude
+qwake schedule logs
+qwake schedule uninstall codex claude</code></pre>
 
   <h2>macOS: LaunchAgent</h2>
   <p>
@@ -95,15 +95,15 @@ journalctl --user -u qwake-claude.service</code></pre>
     creates one task per time window and logs the results under <code>~/.qwake/logs</code>.
   </p>
   <pre><code>where qwake
-qwake schedule install claude --times 06:05,11:10,16:15,21:20
-qwake schedule status claude
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
+qwake schedule status
 schtasks /Query /TN "\Qwake\claude-0605" /V /FO LIST</code></pre>
 
   <h2>Troubleshooting</h2>
   <p>If a scheduled wake did not run, check these first:</p>
-  <pre><code>qwake schedule status claude
-qwake schedule run claude
-qwake schedule logs claude
+  <pre><code>qwake schedule status
+qwake schedule run codex claude
+qwake schedule logs
 qwake doctor</code></pre>
   <p>
     The same log semantics apply on every platform: <code>success</code>, <code>failed</code>,

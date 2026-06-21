@@ -22,9 +22,9 @@ Core commands:
 - qwake wake claude
 - qwake wake claude --smart
 - qwake wake codex
-- qwake schedule install claude --times 06:05,11:10,16:15,21:20
-- qwake schedule status claude
-- qwake schedule logs claude
+- qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
+- qwake schedule status
+- qwake schedule logs
 `,
     {
       headers: {

@@ -163,4 +163,11 @@ describe("CLI", () => {
     expect(wakeHelp.stdout).toContain("--timeout-seconds");
     expect(scheduleHelp.stdout).toContain("--timeout-seconds");
   });
+
+  it("shows multi-agent schedule install usage", async () => {
+    const home = await mkdtemp(path.join(tmpdir(), "qwake-cli-"));
+    const scheduleHelp = await runCli(["schedule", "install", "--help"], home);
+
+    expect(scheduleHelp.stdout).toContain("<agents...>");
+  });
 });

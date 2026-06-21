@@ -33,7 +33,7 @@ qwake wake codex
 Install a daily system schedule:
 
 ```bash
-qwake schedule install codex --times 06:05,11:10,16:15,21:20
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
 qwake schedule status codex
 qwake schedule logs codex
 ```
@@ -54,11 +54,11 @@ qwake wake claude
 qwake wake codex --timeout-seconds 120
 qwake wake custom
 qwake probe claude
-qwake schedule install codex --times 06:05,11:10,16:15,21:20
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
 qwake schedule status codex
-qwake schedule run codex
-qwake schedule logs codex
-qwake schedule uninstall codex
+qwake schedule run codex claude
+qwake schedule logs
+qwake schedule uninstall codex claude
 ```
 
 ## Scheduling
@@ -68,7 +68,7 @@ Qwake does not stay resident. Scheduling is handled by the operating system.
 On macOS, `schedule install` creates a LaunchAgent. On Windows, it creates daily `schtasks` entries. On Linux, it prefers `systemd --user` service and timer units, then falls back to `crontab` when systemd is unavailable:
 
 ```bash
-qwake schedule install claude --times 06:05,11:10,16:15,21:20
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
 ```
 
 The schedule runs a smart wake by default. It only calls the provider when at least `5h + 5m` has passed since the last successful wake for that agent. Otherwise Qwake logs `status=skipped` and avoids spending a live request.
@@ -78,19 +78,19 @@ Qwake also keeps one wake lock per agent. If a wake for the same agent is alread
 Tune the smart window:
 
 ```bash
-qwake schedule install claude --times 06:05,11:10,16:15,21:20 --window-minutes 300 --buffer-minutes 5
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20 --window-minutes 300 --buffer-minutes 5
 ```
 
 Disable smart skipping only when every scheduled time should call the provider:
 
 ```bash
-qwake schedule install claude --times 06:05,11:10,16:15,21:20 --no-smart
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20 --no-smart
 ```
 
 Scheduled wake calls include a 120-second hard timeout by default:
 
 ```bash
-qwake schedule install codex --times 06:05,11:10,16:15,21:20 --timeout-seconds 120
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20 --timeout-seconds 120
 ```
 
 On Windows, you can inspect or remove the generated tasks with:

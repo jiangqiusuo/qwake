@@ -61,11 +61,11 @@ qwake wake mock</code></pre>
   <p>
     Qwake 在 macOS、Linux、Windows 上都保持同一套调度命令：
   </p>
-  <pre><code>qwake schedule install claude --times 06:05,11:10,16:15,21:20
-qwake schedule status claude
-qwake schedule run claude
-qwake schedule logs claude
-qwake schedule uninstall claude</code></pre>
+  <pre><code>qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
+qwake schedule status
+qwake schedule run codex claude
+qwake schedule logs
+qwake schedule uninstall codex claude</code></pre>
 
   <h2>macOS：LaunchAgent</h2>
   <p>
@@ -94,15 +94,15 @@ journalctl --user -u qwake-claude.service</code></pre>
     创建一个任务，并把日志写到 <code>~/.qwake/logs</code>。
   </p>
   <pre><code>where qwake
-qwake schedule install claude --times 06:05,11:10,16:15,21:20
-qwake schedule status claude
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
+qwake schedule status
 schtasks /Query /TN "\Qwake\claude-0605" /V /FO LIST</code></pre>
 
   <h2>排障</h2>
   <p>如果定时唤醒没有执行，先看这些：</p>
-  <pre><code>qwake schedule status claude
-qwake schedule run claude
-qwake schedule logs claude
+  <pre><code>qwake schedule status
+qwake schedule run codex claude
+qwake schedule logs
 qwake doctor</code></pre>
   <p>
     三个平台的日志语义是统一的：<code>success</code>、<code>failed</code>、

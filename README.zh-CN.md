@@ -33,7 +33,7 @@ qwake wake codex
 安装 macOS 每日定时任务：
 
 ```bash
-qwake schedule install codex --times 06:05,11:10,16:15,21:20
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
 qwake schedule status codex
 qwake schedule logs codex
 ```
@@ -54,11 +54,11 @@ qwake wake claude
 qwake wake codex --timeout-seconds 120
 qwake wake custom
 qwake probe claude
-qwake schedule install codex --times 06:05,11:10,16:15,21:20
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
 qwake schedule status codex
-qwake schedule run codex
-qwake schedule logs codex
-qwake schedule uninstall codex
+qwake schedule run codex claude
+qwake schedule logs
+qwake schedule uninstall codex claude
 ```
 
 ## 定时唤醒
@@ -68,7 +68,7 @@ Qwake 自己不常驻后台。定时由操作系统负责。
 在 macOS 上，`schedule install` 会创建 LaunchAgent：
 
 ```bash
-qwake schedule install claude --times 06:05,11:10,16:15,21:20
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
 ```
 
 定时任务默认使用 smart wake。只有当距离该 agent 上一次成功 wake 至少过去 `5 小时 + 5 分钟` 后，Qwake 才会真的调用 provider。否则会记录 `status=skipped`，避免消耗 live request。
@@ -78,19 +78,19 @@ Qwake 还会为每个 agent 保留一个 wake lock。如果同一个 agent 的 w
 调整 smart 窗口：
 
 ```bash
-qwake schedule install claude --times 06:05,11:10,16:15,21:20 --window-minutes 300 --buffer-minutes 5
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20 --window-minutes 300 --buffer-minutes 5
 ```
 
 只有当你明确希望每个定时点都调用 provider 时，才关闭 smart skipping：
 
 ```bash
-qwake schedule install claude --times 06:05,11:10,16:15,21:20 --no-smart
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20 --no-smart
 ```
 
 定时 wake 默认带 120 秒硬超时：
 
 ```bash
-qwake schedule install codex --times 06:05,11:10,16:15,21:20 --timeout-seconds 120
+qwake schedule install codex claude --times 06:05,11:10,16:15,21:20 --timeout-seconds 120
 ```
 
 ? Windows ???????????????????
