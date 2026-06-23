@@ -6,6 +6,7 @@ import {
   buildSystemdTimerUnit,
   buildWindowsCreateTaskArgs,
   buildWindowsTaskName,
+  buildScheduleExistenceChecks,
   normalizeTimes,
   renderLinuxCronScript,
   renderWindowsScheduleScript
@@ -124,5 +125,77 @@ describe("scheduler", () => {
       scriptPath: "/home/demo/.qwake/schedules/qwake-codex.sh",
       label: "QWAKE:codex"
     })).toBe("5 6 * * * /bin/sh \"/home/demo/.qwake/schedules/qwake-codex.sh\" # QWAKE:codex");
+  });
+
+  it("builds Windows schedule existence checks for each installed time", () => {
+    const checks = buildScheduleExistenceChecks({
+      platform: "win32",
+      schedule: {
+        agent: "codex",
+        label: "Qwake codex",
+        plistPath: "",
+        schedulerKind: "schtasks",
+        logPath: "codex.log",
+        errorLogPath: "codex.error.log",
+        times: ["06:05", "11:10"]
+      }
+    });
+
+    expect(checks).toEqual([
+      {
+        name: "schtasks \\Qwake\\codex-0605",
+        command: "schtasks.exe",
+        args: ["/Query", "/TN", "\\Qwake\\codex-0605"],
+        availableLabel: "installed",
+        missingLabel: "missing"
+      },
+      {
+        name: "schtasks \\Qwake\\codex-1110",
+        command: "schtasks.exe",
+        args: ["/Query", "/TN", "\\Qwake\\codex-1110"],
+        availableLabel: "installed",
+        missingLabel: "missing"
+      }
+    ]);
+  });
+
+  it("builds Linux schedule existence checks for systemd and cron schedules", () => {
+    const systemdChecks = buildScheduleExistenceChecks({
+      platform: "linux",
+      schedule: {
+        agent: "claude",
+        label: "qwake-claude",
+        plistPath: "",
+        schedulerKind: "systemd",
+        timerPath: "/home/demo/.config/systemd/user/qwake-claude.timer",
+        logPath: "claude.log",
+        errorLogPath: "claude.error.log",
+        times: ["06:05"]
+      }
+    });
+    const cronChecks = buildScheduleExistenceChecks({
+      platform: "linux",
+      schedule: {
+        agent: "codex",
+        label: "qwake-codex",
+        plistPath: "",
+        schedulerKind: "cron",
+        scriptPath: "/home/demo/.qwake/schedules/qwake-codex.sh",
+        logPath: "codex.log",
+        errorLogPath: "codex.error.log",
+        times: ["06:05"]
+      }
+    });
+
+    expect(systemdChecks[0]).toMatchObject({
+      name: "systemd qwake-claude.timer",
+      command: "systemctl",
+      args: ["--user", "is-enabled", "qwake-claude.timer"]
+    });
+    expect(cronChecks[0]).toMatchObject({
+      name: "cron QWAKE:codex",
+      command: "crontab",
+      args: ["-l"]
+    });
   });
 });

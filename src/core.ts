@@ -12,7 +12,9 @@ import { commandExists, runAgent, runResumeTask } from "./agent-runner.js";
 import {
   installSchedule,
   readScheduleLogs,
+  repairSchedule,
   runScheduleNow,
+  scheduleDoctor,
   scheduleStatus,
   uninstallSchedule
 } from "./scheduler.js";
@@ -258,6 +260,14 @@ export async function removeWakeSchedule(agent: AgentName) {
 
 export async function getWakeScheduleLogs(agent?: AgentName, lines?: number) {
   return readScheduleLogs(agent, lines);
+}
+
+export async function checkWakeScheduler(agent?: AgentName) {
+  return scheduleDoctor(agent);
+}
+
+export async function repairWakeSchedule(agent: AgentName) {
+  return repairSchedule(agent);
 }
 
 export async function triggerWakeSchedule(agent: AgentName) {

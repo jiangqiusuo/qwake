@@ -1,5 +1,9 @@
 # Qwake
 
+[![npm version](https://img.shields.io/npm/v/@sysiphus/qwake.svg)](https://www.npmjs.com/package/@sysiphus/qwake)
+[![npm downloads](https://img.shields.io/npm/dm/@sysiphus/qwake.svg)](https://www.npmjs.com/package/@sysiphus/qwake)
+[![GitHub release](https://img.shields.io/github/v/release/jiangqiusuo/qwake)](https://github.com/jiangqiusuo/qwake/releases)
+[![License](https://img.shields.io/npm/l/@sysiphus/qwake.svg)](LICENSE)
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 一个 local-first 的 AI 编码工具额度窗口唤醒器，支持 Claude Code、Codex 和自定义 CLI provider。
@@ -17,26 +21,21 @@ qwake --help
 
 ## 快速开始
 
-检查本机环境：
+Claude Code + Codex 的常见工作流只需要三条命令。
 
 ```bash
-qwake doctor
-```
-
-手动唤醒一次 agent：
-
-```bash
-qwake wake claude
-qwake wake codex
-```
-
-安装 macOS 每日定时任务：
-
-```bash
+qwake doctor --fix
 qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
-qwake schedule status codex
-qwake schedule logs codex
+qwake schedule doctor
 ```
+
+测试已安装的定时任务。
+
+```bash
+qwake schedule test codex claude
+qwake schedule logs
+```
+
 
 如果暂时没有登录任何 agent，可以用内置 mock agent 测试：
 

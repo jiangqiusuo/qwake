@@ -194,6 +194,24 @@ h2 {
   border-bottom: 1px solid #20342e;
 }
 
+.copy-command {
+  margin-left: auto;
+  min-width: 66px;
+  height: 28px;
+  border: 1px solid #315246;
+  border-radius: 6px;
+  background: #14251f;
+  color: #d8f5e7;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.copy-command:hover,
+.copy-command:focus-visible {
+  background: #1b332b;
+}
+
 .dot {
   width: 11px;
   height: 11px;

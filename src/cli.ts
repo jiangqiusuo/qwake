@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { readFileSync } from "node:fs";
 import {
   addTask,
+  checkWakeScheduler,
   doctor,
   getWakeScheduleLogs,
   getWakeSchedules,
@@ -10,6 +11,7 @@ import {
   installWakeSchedule,
   listTasks,
   probeAgent,
+  repairWakeSchedule,
   removeWakeSchedule,
   resumeTask,
   runDue,
@@ -246,6 +248,85 @@ schedule
   });
 
 schedule
+  .command("doctor")
+  .description("Check system scheduler support.")
+  .argument("[agent]", "optional agent filter")
+  .option("--json", "print structured JSON output")
+  .action(async (agentValue: string | undefined, options: { json?: boolean }) => {
+    const result = await checkWakeScheduler(agentValue ? parseAgent(agentValue) : undefined);
+    if (options.json) {
+      console.log(JSON.stringify(result));
+      return;
+    }
+
+    console.log(`platform: ${result.platform}`);
+    console.log(`scheduler: ${result.scheduler}`);
+    console.log(`available: ${result.available}`);
+    for (const check of result.checks) {
+      console.log(`${check.name}: ${check.available ? "ok" : "missing"}${check.detail ? ` (${check.detail})` : ""}`);
+    }
+    if (result.schedules.length === 0) {
+      console.log("installed schedules: none");
+      return;
+    }
+    console.log("installed schedules:");
+    for (const item of result.schedules) {
+      console.log(`  ${item.agent}  ${item.times.join(", ")}  ${item.label}`);
+      console.log(`    ${item.plistPath || item.timerPath || item.scriptPath}`);
+    }
+  });
+
+schedule
+  .command("test")
+  .description("Test installed wake schedules once.")
+  .argument("<agents...>", "one or more agents: codex, claude, mock, or custom")
+  .option("--json", "print structured JSON output")
+  .action(async (agentValues: string[], options: { json?: boolean }) => {
+    const agents = parseAgents(agentValues);
+    const results = [];
+    for (const agent of agents) {
+      const schedule = await triggerWakeSchedule(agent);
+      results.push({
+        agent,
+        label: schedule.label,
+        status: "triggered",
+        logPath: schedule.logPath,
+        errorLogPath: schedule.errorLogPath
+      });
+      if (!options.json) {
+        console.log(`Tested ${schedule.label}`);
+        console.log("Result: triggered");
+        console.log(`Logs: ${schedule.logPath}`);
+        console.log(`Errors: ${schedule.errorLogPath}`);
+        console.log(`Next: qwake schedule logs ${agent}`);
+      }
+    }
+    if (options.json) {
+      console.log(JSON.stringify({ results }));
+    }
+  });
+
+schedule
+  .command("repair")
+  .description("Repair installed wake schedules.")
+  .argument("[agents...]", "one or more agents: codex, claude, mock, or custom")
+  .option("--all", "repair all schedules with local metadata")
+  .action(async (agentValues: string[], options: { all?: boolean }) => {
+    const agents = options.all
+      ? (await getWakeSchedules()).map((schedule) => schedule.agent)
+      : parseAgents(agentValues);
+    if (agents.length === 0) {
+      throw new Error("Specify at least one agent or use --all.");
+    }
+    for (const agent of agents) {
+      const result = await repairWakeSchedule(agent);
+      console.log(`Repaired ${result.label}`);
+      console.log(`Times: ${result.times.join(", ")}`);
+      console.log(`Logs: ${result.logPath}`);
+    }
+  });
+
+schedule
   .command("run")
   .description("Trigger an installed wake schedule once.")
   .argument("<agents...>", "one or more agents: codex, claude, mock, or custom")
@@ -321,10 +402,28 @@ program
 program
   .command("doctor")
   .description("Check local Qwake configuration and agent commands.")
-  .action(async () => {
+  .option("--json", "print structured JSON output")
+  .option("--fix", "create missing Qwake config before checking")
+  .action(async (options: { json?: boolean; fix?: boolean }) => {
     const opts = program.opts();
     const verbose = Boolean(opts.verbose);
+    const fixedConfigPath = options.fix ? await initialize(false) : undefined;
     const checks = await doctor();
+    if (options.json) {
+      console.log(JSON.stringify({
+        home: getQwakeHome(),
+        config: getConfigPath(),
+        node: process.version,
+        platform: process.platform,
+        fixed: Boolean(options.fix),
+        fixedConfigPath,
+        agents: checks
+      }));
+      return;
+    }
+    if (fixedConfigPath) {
+      console.log(`Qwake config ready: ${fixedConfigPath}`);
+    }
     for (const check of checks) {
       const status = check.available ? "ok" : "missing";
       console.log(`${check.agent}: ${status}${check.command ? ` (${check.command})` : ""}`);

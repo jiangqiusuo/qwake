@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Local-first quota window waker for AI coding agents.",
   "type": "module",
   "bin": {
@@ -19,6 +19,8 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/cli.ts",
     "prepack": "npm run build",
+    "release:check": "npm run test && npm run security:scan && npm run typecheck && npm run build && pnpm --filter qwake-site build && npm pack --dry-run",
+    "security:scan": "node scripts/security-scan.mjs",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

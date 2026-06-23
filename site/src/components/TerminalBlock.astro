@@ -12,6 +12,29 @@ const { code, label = "Terminal example" } = Astro.props;
     <span class="dot"></span>
     <span class="dot"></span>
     <span class="dot"></span>
+    <button type="button" class="copy-command" data-copy={code} aria-label="Copy command">Copy</button>
   </div>
   <pre><code>{code}</code></pre>
 </div>
+
+<script>
+  document.addEventListener("click", async (event) => {
+    const target = event.target instanceof HTMLElement ? event.target.closest<HTMLButtonElement>("[data-copy]") : null;
+    if (!target) {
+      return;
+    }
+    const command = target.dataset.copy || "";
+    try {
+      await navigator.clipboard.writeText(command);
+      target.textContent = "Copied";
+      window.setTimeout(() => {
+        target.textContent = "Copy";
+      }, 1200);
+    } catch {
+      target.textContent = "Copy failed";
+      window.setTimeout(() => {
+        target.textContent = "Copy";
+      }, 1200);
+    }
+  });
+</script>

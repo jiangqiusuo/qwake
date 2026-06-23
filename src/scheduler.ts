@@ -21,6 +21,35 @@ export interface InstalledSchedule {
   logPath: string;
   errorLogPath: string;
   times: string[];
+  budgetUsd?: string;
+  command?: string;
+  smart?: boolean;
+  windowMinutes?: number;
+  bufferMinutes?: number;
+  timeoutSeconds?: number;
+}
+
+export interface SchedulerDoctorCheck {
+  name: string;
+  available: boolean;
+  detail?: string;
+}
+
+export interface ScheduleExistenceCheck {
+  name: string;
+  command: string;
+  args: string[];
+  availableLabel: string;
+  missingLabel: string;
+  outputIncludes?: string;
+}
+
+export interface SchedulerDoctorResult {
+  platform: NodeJS.Platform;
+  scheduler: "launchd" | "schtasks" | "systemd" | "cron" | "unsupported";
+  available: boolean;
+  checks: SchedulerDoctorCheck[];
+  schedules: InstalledSchedule[];
 }
 
 export async function installSchedule(input: {
@@ -77,7 +106,13 @@ export async function installSchedule(input: {
     plistPath: schedule.plistPath,
     logPath: schedule.logPath,
     errorLogPath: schedule.errorLogPath,
-    times
+    times,
+    budgetUsd: input.budgetUsd,
+    command: input.command,
+    smart: input.smart ?? true,
+    windowMinutes: input.windowMinutes,
+    bufferMinutes: input.bufferMinutes,
+    timeoutSeconds: input.timeoutSeconds ?? DEFAULT_WAKE_TIMEOUT_SECONDS
   };
 }
 
@@ -104,6 +139,24 @@ export async function uninstallSchedule(agent: AgentName): Promise<InstalledSche
     errorLogPath: schedule.errorLogPath,
     times
   };
+}
+
+export async function repairSchedule(agent: AgentName): Promise<InstalledSchedule> {
+  const schedules = await scheduleStatus(agent);
+  const existing = schedules[0];
+  if (!existing) {
+    throw new Error(`No wake schedule metadata found for ${agent}. Run schedule install first.`);
+  }
+  return installSchedule({
+    agent,
+    times: existing.times,
+    budgetUsd: existing.budgetUsd,
+    command: existing.command,
+    smart: existing.smart,
+    windowMinutes: existing.windowMinutes,
+    bufferMinutes: existing.bufferMinutes,
+    timeoutSeconds: existing.timeoutSeconds
+  });
 }
 
 export async function scheduleStatus(agent?: AgentName): Promise<InstalledSchedule[]> {
@@ -216,6 +269,108 @@ function getSchedulePaths(agent: AgentName): Omit<InstalledSchedule, "agent" | "
   };
 }
 
+export async function scheduleDoctor(agent?: AgentName): Promise<SchedulerDoctorResult> {
+  const schedules = await scheduleStatus(agent);
+  if (process.platform === "darwin") {
+    const launchctlAvailable = await commandAvailable("launchctl");
+    return {
+      platform: process.platform,
+      scheduler: "launchd",
+      available: launchctlAvailable && await schedulesExist(schedules),
+      checks: [
+        { name: "launchctl", available: launchctlAvailable },
+        ...await runScheduleExistenceChecks(schedules)
+      ],
+      schedules
+    };
+  }
+  if (process.platform === "win32") {
+    const schtasksAvailable = await commandAvailable("schtasks.exe");
+    return {
+      platform: process.platform,
+      scheduler: "schtasks",
+      available: schtasksAvailable && await schedulesExist(schedules),
+      checks: [
+        { name: "schtasks.exe", available: schtasksAvailable },
+        ...await runScheduleExistenceChecks(schedules)
+      ],
+      schedules
+    };
+  }
+  if (process.platform === "linux") {
+    const systemdAvailable = await hasLinuxSystemd();
+    const cronAvailable = await commandAvailable("crontab");
+    const scheduleChecks = await runScheduleExistenceChecks(schedules);
+    return {
+      platform: process.platform,
+      scheduler: systemdAvailable ? "systemd" : cronAvailable ? "cron" : "unsupported",
+      available: (systemdAvailable || cronAvailable) && scheduleChecks.every((check) => check.available),
+      checks: [
+        { name: "systemctl --user", available: systemdAvailable },
+        { name: "crontab", available: cronAvailable },
+        ...scheduleChecks
+      ],
+      schedules
+    };
+  }
+  return {
+    platform: process.platform,
+    scheduler: "unsupported",
+    available: false,
+    checks: [],
+    schedules
+  };
+}
+
+export function buildScheduleExistenceChecks(input: {
+  platform: NodeJS.Platform;
+  schedule: InstalledSchedule;
+}): ScheduleExistenceCheck[] {
+  const { platform, schedule } = input;
+  if (platform === "darwin") {
+    return [{
+      name: `launchd ${schedule.label}`,
+      command: "launchctl",
+      args: ["list", schedule.label],
+      availableLabel: "loaded",
+      missingLabel: "not loaded"
+    }];
+  }
+  if (platform === "win32") {
+    return schedule.times.map((time) => {
+      const taskName = buildWindowsTaskName(schedule.agent, time);
+      return {
+        name: `schtasks ${taskName}`,
+        command: "schtasks.exe",
+        args: ["/Query", "/TN", taskName],
+        availableLabel: "installed",
+        missingLabel: "missing"
+      };
+    });
+  }
+  if (platform === "linux" && schedule.schedulerKind === "cron") {
+    return [{
+      name: `cron QWAKE:${schedule.agent}`,
+      command: "crontab",
+      args: ["-l"],
+      availableLabel: "installed",
+      missingLabel: "missing",
+      outputIncludes: `# QWAKE:${schedule.agent}`
+    }];
+  }
+  if (platform === "linux") {
+    const timerName = schedule.timerPath ? path.basename(schedule.timerPath) : `${buildLinuxScheduleLabel(schedule.agent)}.timer`;
+    return [{
+      name: `systemd ${timerName}`,
+      command: "systemctl",
+      args: ["--user", "is-enabled", timerName],
+      availableLabel: "enabled",
+      missingLabel: "disabled or missing"
+    }];
+  }
+  return [];
+}
+
 function buildProgramArguments(input: {
   command?: string;
   agent: AgentName;
@@ -304,7 +459,13 @@ async function installWindowsSchedule(input: {
     scriptPath: schedule.scriptPath,
     logPath: schedule.logPath,
     errorLogPath: schedule.errorLogPath,
-    times
+    times,
+    budgetUsd: input.budgetUsd,
+    command: input.command,
+    smart: input.smart ?? true,
+    windowMinutes: input.windowMinutes,
+    bufferMinutes: input.bufferMinutes,
+    timeoutSeconds: input.timeoutSeconds ?? DEFAULT_WAKE_TIMEOUT_SECONDS
   }, null, 2));
 
   return {
@@ -316,7 +477,13 @@ async function installWindowsSchedule(input: {
     metadataPath: schedule.metadataPath,
     logPath: schedule.logPath,
     errorLogPath: schedule.errorLogPath,
-    times
+    times,
+    budgetUsd: input.budgetUsd,
+    command: input.command,
+    smart: input.smart ?? true,
+    windowMinutes: input.windowMinutes,
+    bufferMinutes: input.bufferMinutes,
+    timeoutSeconds: input.timeoutSeconds ?? DEFAULT_WAKE_TIMEOUT_SECONDS
   };
 }
 
@@ -363,6 +530,12 @@ async function readWindowsScheduleMetadata(agent: AgentName): Promise<InstalledS
       logPath?: string;
       errorLogPath?: string;
       times?: string[];
+      budgetUsd?: string;
+      command?: string;
+      smart?: boolean;
+      windowMinutes?: number;
+      bufferMinutes?: number;
+      timeoutSeconds?: number;
     };
     if (!parsed.times?.length) {
       return undefined;
@@ -375,7 +548,13 @@ async function readWindowsScheduleMetadata(agent: AgentName): Promise<InstalledS
       metadataPath: schedule.metadataPath,
       logPath: parsed.logPath || schedule.logPath,
       errorLogPath: parsed.errorLogPath || schedule.errorLogPath,
-      times: normalizeTimes(parsed.times)
+      times: normalizeTimes(parsed.times),
+      budgetUsd: parsed.budgetUsd,
+      command: parsed.command,
+      smart: parsed.smart,
+      windowMinutes: parsed.windowMinutes,
+      bufferMinutes: parsed.bufferMinutes,
+      timeoutSeconds: parsed.timeoutSeconds
     };
   } catch {
     return undefined;
@@ -480,7 +659,13 @@ async function installLinuxSchedule(input: {
       timerPath: schedule.timerPath,
       logPath: schedule.logPath,
       errorLogPath: schedule.errorLogPath,
-      times
+      times,
+      budgetUsd: input.budgetUsd,
+      command: input.command,
+      smart: input.smart ?? true,
+      windowMinutes: input.windowMinutes,
+      bufferMinutes: input.bufferMinutes,
+      timeoutSeconds: input.timeoutSeconds ?? DEFAULT_WAKE_TIMEOUT_SECONDS
     }, null, 2));
 
     await systemctlUser(["daemon-reload"]);
@@ -496,7 +681,13 @@ async function installLinuxSchedule(input: {
       timerPath: schedule.timerPath,
       logPath: schedule.logPath,
       errorLogPath: schedule.errorLogPath,
-      times
+      times,
+      budgetUsd: input.budgetUsd,
+      command: input.command,
+      smart: input.smart ?? true,
+      windowMinutes: input.windowMinutes,
+      bufferMinutes: input.bufferMinutes,
+      timeoutSeconds: input.timeoutSeconds ?? DEFAULT_WAKE_TIMEOUT_SECONDS
     };
   }
 
@@ -518,7 +709,13 @@ async function installLinuxSchedule(input: {
     scriptPath: cronScriptPath,
     logPath: schedule.logPath,
     errorLogPath: schedule.errorLogPath,
-    times
+    times,
+    budgetUsd: input.budgetUsd,
+    command: input.command,
+    smart: input.smart ?? true,
+    windowMinutes: input.windowMinutes,
+    bufferMinutes: input.bufferMinutes,
+    timeoutSeconds: input.timeoutSeconds ?? DEFAULT_WAKE_TIMEOUT_SECONDS
   }, null, 2));
   return {
     agent: input.agent,
@@ -529,7 +726,13 @@ async function installLinuxSchedule(input: {
     scriptPath: cronScriptPath,
     logPath: schedule.logPath,
     errorLogPath: schedule.errorLogPath,
-    times
+    times,
+    budgetUsd: input.budgetUsd,
+    command: input.command,
+    smart: input.smart ?? true,
+    windowMinutes: input.windowMinutes,
+    bufferMinutes: input.bufferMinutes,
+    timeoutSeconds: input.timeoutSeconds ?? DEFAULT_WAKE_TIMEOUT_SECONDS
   };
 }
 
@@ -583,6 +786,12 @@ async function readLinuxScheduleMetadata(agent: AgentName): Promise<InstalledSch
       logPath?: string;
       errorLogPath?: string;
       times?: string[];
+      budgetUsd?: string;
+      command?: string;
+      smart?: boolean;
+      windowMinutes?: number;
+      bufferMinutes?: number;
+      timeoutSeconds?: number;
     };
     if (!parsed.times?.length) {
       return undefined;
@@ -598,7 +807,13 @@ async function readLinuxScheduleMetadata(agent: AgentName): Promise<InstalledSch
       timerPath: parsed.timerPath || schedule.timerPath,
       logPath: parsed.logPath || schedule.logPath,
       errorLogPath: parsed.errorLogPath || schedule.errorLogPath,
-      times: normalizeTimes(parsed.times)
+      times: normalizeTimes(parsed.times),
+      budgetUsd: parsed.budgetUsd,
+      command: parsed.command,
+      smart: parsed.smart,
+      windowMinutes: parsed.windowMinutes,
+      bufferMinutes: parsed.bufferMinutes,
+      timeoutSeconds: parsed.timeoutSeconds
     };
   } catch {
     return undefined;
@@ -854,6 +1069,52 @@ function shellScript(command: [string, ...string[]], ignoreFailure = false): Pro
         reject(new Error(`${command.join(" ")} failed with exit code ${code}.`));
       }
     });
+  });
+}
+
+function commandAvailable(command: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const child = spawn(command, process.platform === "win32" ? ["/?"] : ["--version"], { stdio: "ignore" });
+    child.on("error", () => resolve(false));
+    child.on("close", () => resolve(true));
+  });
+}
+
+async function schedulesExist(schedules: InstalledSchedule[]): Promise<boolean> {
+  const checks = await runScheduleExistenceChecks(schedules);
+  return checks.every((check) => check.available);
+}
+
+async function runScheduleExistenceChecks(schedules: InstalledSchedule[]): Promise<SchedulerDoctorCheck[]> {
+  const checks = schedules.flatMap((schedule) => buildScheduleExistenceChecks({
+    platform: process.platform,
+    schedule
+  }));
+  return Promise.all(checks.map(async (check) => {
+    const result = await commandSucceeds(check.command, check.args);
+    const available = result.exitCode === 0 && (
+      check.outputIncludes === undefined || result.output.includes(check.outputIncludes)
+    );
+    return {
+      name: check.name,
+      available,
+      detail: available ? check.availableLabel : check.missingLabel
+    };
+  }));
+}
+
+function commandSucceeds(command: string, args: string[]): Promise<{ exitCode: number | null; output: string }> {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"] });
+    let output = "";
+    child.stdout.on("data", (chunk) => {
+      output += String(chunk);
+    });
+    child.stderr.on("data", (chunk) => {
+      output += String(chunk);
+    });
+    child.on("error", () => resolve({ exitCode: null, output }));
+    child.on("close", (code) => resolve({ exitCode: code, output }));
   });
 }
 

@@ -63,7 +63,9 @@ qwake wake mock</code></pre>
   </p>
   <pre><code>qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
 qwake schedule status
-qwake schedule run codex claude
+qwake schedule doctor
+qwake schedule test codex claude
+qwake schedule repair codex claude
 qwake schedule logs
 qwake schedule uninstall codex claude</code></pre>
 
@@ -102,7 +104,8 @@ schtasks /Query /TN "\Qwake\claude-0605" /V /FO LIST</code></pre>
   <h2>Troubleshooting</h2>
   <p>If a scheduled wake did not run, check these first:</p>
   <pre><code>qwake schedule status
-qwake schedule run codex claude
+qwake schedule doctor
+qwake schedule test codex claude
 qwake schedule logs
 qwake doctor</code></pre>
   <p>

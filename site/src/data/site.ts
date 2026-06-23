@@ -66,9 +66,9 @@ Logs: ~/.qwake/logs/claude.log`,
     installTitle: "Install",
     installBody: "Install globally after npm publish, or build from the repository during development.",
     installCode: `npm install -g @sysiphus/qwake
-qwake init
-qwake doctor
-qwake wake claude`,
+qwake doctor --fix
+qwake schedule install codex claude \\
+  --times 06:05,11:10,16:15,21:20`,
     scheduleTitle: "Schedule wake calls",
     scheduleBody:
       "Qwake does not stay resident. It delegates timing to the operating system and uses smart 5h+buffer skipping to avoid redundant provider calls.",
@@ -76,14 +76,16 @@ qwake wake claude`,
   --times 06:05,11:10,16:15,21:20
 
 qwake schedule status
-qwake schedule run codex claude
+qwake schedule doctor
+qwake schedule test codex claude
+qwake schedule repair codex claude
 qwake schedule logs`,
     verifyTitle: "Verify scheduled wakes",
     verifyBody:
       "After installing a schedule, status and logs tell you whether launchd loaded it and whether wake calls succeeded.",
     verifyCode: `qwake schedule status
-launchctl list | rg qwake
-qwake schedule run codex claude
+qwake schedule doctor
+qwake schedule test codex claude
 qwake schedule logs
 
 # healthy log output
@@ -174,9 +176,9 @@ Logs: ~/.qwake/logs/claude.log`,
     installTitle: "安装",
     installBody: "发布到 npm 后可全局安装；开发阶段也可以从仓库构建。",
     installCode: `npm install -g @sysiphus/qwake
-qwake init
-qwake doctor
-qwake wake claude`,
+qwake doctor --fix
+qwake schedule install codex claude \\
+  --times 06:05,11:10,16:15,21:20`,
     scheduleTitle: "定时唤醒",
     scheduleBody:
       "Qwake 自己不常驻后台。它把定时交给操作系统，并用 5 小时 + buffer 的 smart skipping 避免重复调用 provider。",
@@ -184,14 +186,16 @@ qwake wake claude`,
   --times 06:05,11:10,16:15,21:20
 
 qwake schedule status
-qwake schedule run codex claude
+qwake schedule doctor
+qwake schedule test codex claude
+qwake schedule repair codex claude
 qwake schedule logs`,
     verifyTitle: "确认定时唤醒是否运行",
     verifyBody:
       "安装 schedule 后，可以通过 status 和 logs 确认 launchd 是否已加载，以及 wake 是否成功执行。",
     verifyCode: `qwake schedule status
-launchctl list | rg qwake
-qwake schedule run codex claude
+qwake schedule doctor
+qwake schedule test codex claude
 qwake schedule logs
 
 # 健康日志输出

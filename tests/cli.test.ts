@@ -71,6 +71,29 @@ describe("CLI", () => {
     expect(check.stdout).not.toContain("/bin/");
   });
 
+  it("prints structured doctor JSON", async () => {
+    const home = await mkdtemp(path.join(tmpdir(), "qwake-cli-"));
+    await runCli(["init"], home);
+
+    const check = await runCli(["doctor", "--json"], home);
+    const payload = JSON.parse(check.stdout);
+
+    expect(payload).toMatchObject({
+      home,
+      config: path.join(home, "config.yaml")
+    });
+    expect(payload.agents).toEqual(expect.arrayContaining([
+      expect.objectContaining({ agent: "mock", available: true })
+    ]));
+  });
+
+  it("shows doctor fix option in help", async () => {
+    const home = await mkdtemp(path.join(tmpdir(), "qwake-cli-"));
+    const help = await runCli(["doctor", "--help"], home);
+
+    expect(help.stdout).toContain("--fix");
+  });
+
   it("supports pnpm-style leading -- before commands", async () => {
     const home = await mkdtemp(path.join(tmpdir(), "qwake-cli-"));
     await runCli(["--", "init"], home);
@@ -169,5 +192,36 @@ describe("CLI", () => {
     const scheduleHelp = await runCli(["schedule", "install", "--help"], home);
 
     expect(scheduleHelp.stdout).toContain("<agents...>");
+  });
+
+  it("shows schedule doctor, repair, and test commands in help", async () => {
+    const home = await mkdtemp(path.join(tmpdir(), "qwake-cli-"));
+    const scheduleHelp = await runCli(["schedule", "--help"], home);
+    const doctorHelp = await runCli(["schedule", "doctor", "--help"], home);
+    const repairHelp = await runCli(["schedule", "repair", "--help"], home);
+    const testHelp = await runCli(["schedule", "test", "--help"], home);
+
+    expect(scheduleHelp.stdout).toContain("doctor");
+    expect(scheduleHelp.stdout).toContain("repair");
+    expect(scheduleHelp.stdout).toContain("test");
+    expect(doctorHelp.stdout).toContain("Check system scheduler support");
+    expect(repairHelp.stdout).toContain("Repair installed wake schedules");
+    expect(repairHelp.stdout).toContain("--all");
+    expect(testHelp.stdout).toContain("Test installed wake schedules");
+    expect(testHelp.stdout).toContain("--json");
+  });
+
+  it("prints structured schedule doctor JSON", async () => {
+    const home = await mkdtemp(path.join(tmpdir(), "qwake-cli-"));
+    const check = await runCli(["schedule", "doctor", "--json"], home);
+    const payload = JSON.parse(check.stdout);
+
+    expect(payload).toMatchObject({
+      platform: process.platform,
+      available: expect.any(Boolean),
+      checks: expect.any(Array),
+      schedules: []
+    });
+    expect(typeof payload.scheduler).toBe("string");
   });
 });

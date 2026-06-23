@@ -1,5 +1,9 @@
 # Qwake
 
+[![npm version](https://img.shields.io/npm/v/@sysiphus/qwake.svg)](https://www.npmjs.com/package/@sysiphus/qwake)
+[![npm downloads](https://img.shields.io/npm/dm/@sysiphus/qwake.svg)](https://www.npmjs.com/package/@sysiphus/qwake)
+[![GitHub release](https://img.shields.io/github/v/release/jiangqiusuo/qwake)](https://github.com/jiangqiusuo/qwake/releases)
+[![License](https://img.shields.io/npm/l/@sysiphus/qwake.svg)](LICENSE)
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 Local-first quota window waker for AI coding agents such as Claude Code, Codex, and custom CLI providers.
@@ -17,25 +21,19 @@ Requires Node.js 20 or newer.
 
 ## Quick Start
 
-Check your local setup:
+Three commands are enough for the common Claude Code + Codex workflow:
 
 ```bash
-qwake doctor
-```
-
-Wake an agent once:
-
-```bash
-qwake wake claude
-qwake wake codex
-```
-
-Install a daily system schedule:
-
-```bash
+qwake doctor --fix
 qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
-qwake schedule status codex
-qwake schedule logs codex
+qwake schedule doctor
+```
+
+Test the installed schedules once:
+
+```bash
+qwake schedule test codex claude
+qwake schedule logs
 ```
 
 Test without any agent login by using the built-in mock agent:
@@ -50,13 +48,18 @@ qwake probe mock
 ```bash
 qwake init
 qwake doctor
+qwake doctor --fix
 qwake wake claude
 qwake wake codex --timeout-seconds 120
 qwake wake custom
 qwake probe claude
 qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
 qwake schedule status codex
+qwake schedule doctor
+qwake schedule test codex claude
 qwake schedule run codex claude
+qwake schedule repair codex claude
+qwake schedule repair --all
 qwake schedule logs
 qwake schedule uninstall codex claude
 ```
@@ -220,6 +223,7 @@ Wake and probe commands do not write into your project directory. Smart wake sta
 pnpm install
 pnpm build
 pnpm test
+npm run release:check
 pnpm dev -- --help
 ```
 

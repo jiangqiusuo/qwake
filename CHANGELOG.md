@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.5 (2026-06-23)
+
+### CLI
+
+- added `qwake schedule doctor` for scheduler availability and installed schedule checks
+- added `qwake schedule test` and `qwake schedule repair` with `--all` support for installed schedules
+- added `qwake doctor --json` and `qwake doctor --fix`
+
+### Documentation and safety
+
+- refreshed README and website quick start flows around the three-command install path
+- added a local `security:scan` release gate and wired it into `release:check`
+- updated site examples and llms.txt to match the new schedule workflow
+
 ## 0.1.4 (2026-06-21)
 
 ### Scheduling

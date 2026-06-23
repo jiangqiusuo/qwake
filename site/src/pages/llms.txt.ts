@@ -24,6 +24,9 @@ Core commands:
 - qwake wake codex
 - qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
 - qwake schedule status
+- qwake schedule doctor
+- qwake schedule test codex claude
+- qwake schedule repair codex claude
 - qwake schedule logs
 `,
     {
