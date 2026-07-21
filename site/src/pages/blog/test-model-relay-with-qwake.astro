@@ -1,0 +1,98 @@
+---
+import BlogLayout from "../../layouts/BlogLayout.astro";
+import { SITE_URL } from "../../data/site";
+
+const title = "Test an OpenAI-compatible relay with Qwake";
+const description =
+  "Build a trusted reference profile, sample a target endpoint, and compare answer distributions in a reviewable local relay audit.";
+const jsonLd = [{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: title,
+  description,
+  author: { "@type": "Organization", name: "Qwake" },
+  mainEntityOfPage: `${SITE_URL}/blog/test-model-relay-with-qwake/`,
+  datePublished: "2026-07-21T00:00:00+08:00",
+  dateModified: "2026-07-21T00:00:00+08:00",
+  image: `${SITE_URL}/og-image.svg`,
+  publisher: { "@type": "Organization", name: "Qwake", url: SITE_URL }
+}];
+---
+
+<BlogLayout
+  locale="en"
+  title={title}
+  description={description}
+  canonicalPath="/blog/test-model-relay-with-qwake/"
+  alternatePath="/zh-CN/blog/test-model-relay-with-qwake/"
+  jsonLd={jsonLd}
+>
+  <p>
+    This guide uses Qwake's experimental <code>fingerprint</code> commands to audit an OpenAI-compatible relay endpoint. Only test services you are authorized to access. Confirm that sampling is permitted by the service terms and estimate the cost first: the default mini preset makes 120 very short requests in one language.
+  </p>
+
+  <h2>Start with a sound baseline</h2>
+  <p>
+    Prepare a trusted reference endpoint first. Ideally this is a clearly versioned official API from the model vendor; it can also be an endpoint you have independently verified and whose configuration is stable. An untrusted reference makes the comparison meaningless. Keep the model name, preset, language, temperature, and max-tokens settings identical at both endpoints.
+  </p>
+
+  <h2>1. Install Qwake and prepare API keys</h2>
+  <pre><code>npm install -g @sysiphus/qwake
+
+# Set only in the current shell. Do not put keys in screenshots or commits.
+export OFFICIAL_API_KEY='replace-with-your-key'
+export RELAY_API_KEY='replace-with-your-key'</code></pre>
+  <p>
+    Qwake reads keys through <code>--api-key-env</code> rather than accepting them on the command line. It does not write keys to <code>~/.qwake/fingerprints</code>, but the shell environment still needs to be protected.
+  </p>
+
+  <h2>2. Collect and enroll a trusted reference</h2>
+  <pre><code>qwake fingerprint collect \
+  --base-url https://api.example.com/v1 \
+  --api-key-env OFFICIAL_API_KEY \
+  --model gpt-4o \
+  --preset mini \
+  --languages en \
+  --samples 15</code></pre>
+  <p>
+    The command prints the path to a run JSON file. Turn that run into a clearly named reference profile:</p>
+  <pre><code>qwake fingerprint enroll \
+  --name gpt-4o-official-2026-07 \
+  --from ~/.qwake/fingerprints/runs/&lt;run&gt;.json</code></pre>
+  <p>
+    For a model that supports Chinese, collect a separate run with <code>--languages en,zh</code>. The two sides of every comparison must match exactly. When cost allows, use <code>--preset full</code> and more samples to establish a more stable baseline.
+  </p>
+
+  <h2>3. Audit the relay endpoint</h2>
+  <pre><code>qwake fingerprint audit \
+  --claim gpt-4o-official-2026-07 \
+  --base-url https://relay.example.com/v1 \
+  --api-key-env RELAY_API_KEY \
+  --model gpt-4o \
+  --preset mini \
+  --languages en \
+  --samples 15</code></pre>
+  <p>
+    This collects a fresh run, derives an audit profile, and prints a report. The report uses <code>likely_match</code> for a close distribution, <code>suspicious_drift</code> for a difference worth investigating, and <code>likely_mismatch</code> for substantial divergence. When too few comparable cells are available it returns <code>inconclusive</code>.
+  </p>
+
+  <h2>4. Treat an anomaly as a lead</h2>
+  <p>
+    Repeat the measurement before concluding anything. Check that model label, version, region, temperature, max tokens, language, and time window are consistent. Then investigate relay-side caching, load balancing, fallback behavior, or hidden reasoning. Only persistent drift after those controls is good grounds for a technical question to the provider, accompanied by the run files, configuration, and timestamps.
+  </p>
+  <p>
+    A durable practice is to establish a fresh reference after material model or provider changes, periodically compare new samples to the saved baseline, and treat the result as an observation log. It should help you ask better questions, not replace a provider's transparency commitments.
+  </p>
+
+  <h2>Where evidence lives</h2>
+  <pre><code>~/.qwake/fingerprints/
+  runs/       # normalized results for each collection
+  profiles/   # named reference profiles
+
+qwake fingerprint compare \
+  --left gpt-4o-official-2026-07 \
+  --right ~/.qwake/fingerprints/profiles/another-run.json</code></pre>
+  <p>
+    Run files do not contain an API key, but they can contain endpoint URLs, model names, and answer statistics. Review them against your organization's security policy before sharing them outside the team.
+  </p>
+</BlogLayout>

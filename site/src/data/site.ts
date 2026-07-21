@@ -91,6 +91,20 @@ qwake schedule logs
 # healthy log output
 [2026-06-01 09:20:00 +08:00] wake agent=claude status=success exitCode=0 limited=false durationMs=1842 utc=2026-06-01T01:20:00.000Z
 [2026-06-01 11:10:00 +08:00] wake agent=claude status=skipped exitCode=0 limited=false durationMs=3 utc=2026-06-01T03:10:00.000Z nextWakeAt=2026-06-01T06:25:00.000Z`,
+    fingerprintTitle: "Audit relay endpoints with behavioral fingerprints",
+    fingerprintBody:
+      "The experimental fingerprint workflow samples short answers from an OpenAI-compatible endpoint, stores the evidence locally, and compares it with a trusted reference profile.",
+    fingerprintWarning:
+      "A fingerprint is statistical evidence, not cryptographic proof. Model updates, quantization, provider routing, caching, and hidden reasoning can all cause a legitimate drift.",
+    fingerprintCode: `export RELAY_API_KEY=sk-...
+qwake fingerprint collect \\
+  --base-url https://relay.example.com/v1 \\
+  --api-key-env RELAY_API_KEY --model gpt-4o
+qwake fingerprint enroll --name gpt-4o-reference \\
+  --from ~/.qwake/fingerprints/runs/<run>.json
+qwake fingerprint audit --claim gpt-4o-reference \\
+  --base-url https://relay.example.com/v1 \\
+  --api-key-env RELAY_API_KEY --model gpt-4o`,
     warning:
       "Qwake attempts wake requests and records timestamps. It cannot guarantee provider quota refresh if the machine is off, fully asleep, offline, or rejected by the provider.",
     blogTitle: "Cross-platform setup guide",
@@ -98,6 +112,21 @@ qwake schedule logs
       "Read the practical guide for macOS LaunchAgent, Linux systemd/crontab fallback, and Windows Task Scheduler workflows.",
     blogHref: "/blog/use-qwake-on-macos-windows-linux/",
     blogCta: "Read the guide",
+    fingerprintBlogTitle: "Model fingerprinting guides",
+    fingerprintBlogs: [
+      {
+        title: "Why a one-token answer can reveal a model",
+        body: "The paper behind Qwake's experimental workflow, what it establishes, and the limits of endpoint verification.",
+        href: "/blog/model-behavioral-fingerprinting/",
+        cta: "Read the research note"
+      },
+      {
+        title: "Test an OpenAI-compatible relay with Qwake",
+        body: "A practical, local-first workflow for collecting a reference profile and auditing a relay endpoint.",
+        href: "/blog/test-model-relay-with-qwake/",
+        cta: "Read the tutorial"
+      }
+    ],
     seoTitle: "How Qwake works",
     steps: [
       "Install Qwake globally with npm.",
@@ -201,6 +230,20 @@ qwake schedule logs
 # 健康日志输出
 [2026-06-01 09:20:00 +08:00] wake agent=claude status=success exitCode=0 limited=false durationMs=1842 utc=2026-06-01T01:20:00.000Z
 [2026-06-01 11:10:00 +08:00] wake agent=claude status=skipped exitCode=0 limited=false durationMs=3 utc=2026-06-01T03:10:00.000Z nextWakeAt=2026-06-01T06:25:00.000Z`,
+    fingerprintTitle: "用行为指纹审计中转站模型",
+    fingerprintBody:
+      "实验性的模型指纹流程会采样 OpenAI-compatible endpoint 对短问题的回答，在本地保存证据，并与可信 reference profile 做对比。",
+    fingerprintWarning:
+      "指纹是统计证据，不是密码学证明。模型更新、量化、服务商路由、缓存和隐藏 reasoning 都可能造成合理的分布偏移。",
+    fingerprintCode: `export RELAY_API_KEY=sk-...
+qwake fingerprint collect \\
+  --base-url https://relay.example.com/v1 \\
+  --api-key-env RELAY_API_KEY --model gpt-4o
+qwake fingerprint enroll --name gpt-4o-reference \\
+  --from ~/.qwake/fingerprints/runs/<run>.json
+qwake fingerprint audit --claim gpt-4o-reference \\
+  --base-url https://relay.example.com/v1 \\
+  --api-key-env RELAY_API_KEY --model gpt-4o`,
     warning:
       "Qwake 能尝试发送 wake 请求并记录时间戳，但如果电脑关机、完全深度睡眠、断网，或 provider 拒绝请求，它不能保证额度一定刷新。",
     blogTitle: "跨平台使用指南",
@@ -208,6 +251,21 @@ qwake schedule logs
       "阅读 macOS LaunchAgent、Linux cron/systemd、Windows Task Scheduler 的实际使用方式。",
     blogHref: "/zh-CN/blog/use-qwake-on-macos-windows-linux/",
     blogCta: "阅读指南",
+    fingerprintBlogTitle: "模型指纹检测指南",
+    fingerprintBlogs: [
+      {
+        title: "一个 token 的回答，为什么可能暴露模型行为",
+        body: "介绍 Qwake 实验性能力背后的论文、它能说明什么，以及 endpoint 验证的边界。",
+        href: "/zh-CN/blog/model-behavioral-fingerprinting/",
+        cta: "阅读研究解读"
+      },
+      {
+        title: "用 Qwake 测试 OpenAI-compatible 中转站",
+        body: "从建立可信基准，到审计中转 endpoint 的完整本地化操作流程。",
+        href: "/zh-CN/blog/test-model-relay-with-qwake/",
+        cta: "阅读实操教程"
+      }
+    ],
     seoTitle: "Qwake 如何工作",
     steps: [
       "用 npm 全局安装 Qwake。",

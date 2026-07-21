@@ -75,8 +75,8 @@ const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
           <a href={GITHUB_URL}>GitHub</a>
         </div>
         <div class="langs">
-          <a aria-current={locale === "en" ? "page" : undefined} href="/blog/use-qwake-on-macos-windows-linux/">EN</a>
-          <a aria-current={locale === "zh-CN" ? "page" : undefined} href="/zh-CN/blog/use-qwake-on-macos-windows-linux/">中文</a>
+          <a aria-current={locale === "en" ? "page" : undefined} href={locale === "en" ? canonicalPath : alternatePath}>EN</a>
+          <a aria-current={locale === "zh-CN" ? "page" : undefined} href={locale === "zh-CN" ? canonicalPath : alternatePath}>中文</a>
         </div>
       </nav>
     </header>

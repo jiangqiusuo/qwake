@@ -16,3 +16,7 @@ export function getTasksDir(home = getQwakeHome()): string {
 export function getWakesDir(home = getQwakeHome()): string {
   return path.join(home, "wakes");
 }
+
+export function getFingerprintDir(home = getQwakeHome()): string {
+  return path.join(home, "fingerprints");
+}

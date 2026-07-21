@@ -1,0 +1,72 @@
+---
+import BlogLayout from "../../layouts/BlogLayout.astro";
+import { SITE_URL } from "../../data/site";
+
+const title = "Why a one-token answer can reveal a model";
+const description =
+  "A guide to behavioral fingerprinting: using the distributions of simple answers as statistical evidence when auditing OpenAI-compatible relay endpoints.";
+const jsonLd = [{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: title,
+  description,
+  author: { "@type": "Organization", name: "Qwake" },
+  mainEntityOfPage: `${SITE_URL}/blog/model-behavioral-fingerprinting/`,
+  datePublished: "2026-07-21T00:00:00+08:00",
+  dateModified: "2026-07-21T00:00:00+08:00",
+  image: `${SITE_URL}/og-image.svg`,
+  publisher: { "@type": "Organization", name: "Qwake", url: SITE_URL }
+}];
+---
+
+<BlogLayout
+  locale="en"
+  title={title}
+  description={description}
+  canonicalPath="/blog/model-behavioral-fingerprinting/"
+  alternatePath="/zh-CN/blog/model-behavioral-fingerprinting/"
+  jsonLd={jsonLd}
+>
+  <p>
+    When an API advertises a model, callers usually have to take the claim on trust. Relays, aggregators, and inference providers lengthen the serving chain: the same model label can resolve to updated weights, a different quantization, or another model entirely. Qwake's experimental <code>fingerprint</code> workflow does not try to break model identity. It turns that trust into a repeatable, local statistical check.
+  </p>
+
+  <h2>The research idea</h2>
+  <p>
+    <a href="https://arxiv.org/abs/2607.10252">One Token Is Enough</a> proposes a behavioral fingerprint for LLMs. Repeatedly ask short questions such as “name a random number between 1 and 100,” “what is your favorite color,” or “flip a coin,” then record the distribution of the first short answer. Although the model is asked to be random, its answers are often not uniform, and different models or model families leave distinct distributional traces.
+  </p>
+  <p>
+    The paper samples ten task types in four languages and compares distributions with Jensen-Shannon divergence. It reports that two halves of a model's own samples are generally far closer than samples from different models. Its full battery reached a 7.3% equal error rate; eight probe cells remained below 11%. That makes the result a cheap signal worth investigating, not the final word on identity.
+  </p>
+
+  <h2>Why trivial questions help</h2>
+  <p>
+    Long completions are heavily shaped by system prompts, tools, context, and the user's task. These probes intentionally reduce the task to one answer and cap the completion length, so the measurement better reflects a model's sampling preferences. Qwake V1 includes random and favorite numbers, random letters, random and favorite colors, random animals, and coin flips, in English and Chinese.
+  </p>
+  <p>
+    The default <code>mini</code> preset has eight cells with 15 samples each: 120 short requests in one language. It follows the paper's finding that roughly a hundred one-token queries can form an initial audit signal, while making no claim to reproduce the paper's full experimental setting or metrics.
+  </p>
+
+  <h2>What this can tell you</h2>
+  <ul>
+    <li>Whether a relay endpoint has moved materially away from a trusted reference over time.</li>
+    <li>Whether two endpoints that claim the same model have similar short-answer distributions.</li>
+    <li>Whether a provider switch, routing change, or model update created drift worth reviewing.</li>
+  </ul>
+
+  <h2>What it cannot tell you</h2>
+  <p>
+    It cannot prove that an endpoint does or does not use particular weights. Legitimate drift can come from a model update, quantization, decoding settings, hidden reasoning, regional routing, caching, safety filtering, or too few samples. Conversely, a close distribution cannot rule out two endpoints having coincidentally similar behavior.
+  </p>
+  <p>
+    The right language is “consistent with the reference,” “material drift observed,” or “repeat the audit,” not “model identity established” or “fraud confirmed.” For procurement, compliance, or security decisions, pair the result with vendor attestations, version records, request logs, latency and cost observations.
+  </p>
+
+  <h2>How Qwake implements the workflow</h2>
+  <p>
+    Qwake targets OpenAI-compatible <code>/chat/completions</code> APIs. It reads an API key only from a named environment variable and does not write the key to configuration, run files, or reports. Runs and named reference profiles remain local under <code>~/.qwake/fingerprints/</code>. Qwake normalizes responses into categories, aggregates each cell into an empirical distribution, and reports overall and per-cell divergence.
+  </p>
+  <p>
+    The next guide turns this into a practical flow: establish a baseline on a trusted endpoint, then collect and compare an independent sample from the relay you want to audit.
+  </p>
+</BlogLayout>

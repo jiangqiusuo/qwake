@@ -5,6 +5,10 @@ import {
   addTask,
   checkWakeScheduler,
   doctor,
+  auditModelFingerprint,
+  collectModelFingerprint,
+  compareModelFingerprints,
+  enrollModelFingerprint,
   getWakeScheduleLogs,
   getWakeSchedules,
   initialize,
@@ -22,6 +26,7 @@ import {
 import { DEFAULT_BUFFER_MINUTES, DEFAULT_WINDOW_MINUTES } from "./config.js";
 import { getQwakeHome, getConfigPath } from "./paths.js";
 import type { AgentName } from "./types.js";
+import { parseFingerprintPreset, parseProbeLanguages } from "./fingerprint/probes.js";
 
 const packageJson = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
   version: string;
@@ -340,6 +345,121 @@ schedule
     }
   });
 
+const fingerprint = program
+  .command("fingerprint")
+  .description("[experimental] Collect and compare behavioral fingerprints for OpenAI-compatible model endpoints.");
+
+fingerprint
+  .command("collect")
+  .description("Collect a model fingerprint from an OpenAI-compatible endpoint.")
+  .requiredOption("--base-url <url>", "OpenAI-compatible API base URL, e.g. https://relay.example.com/v1")
+  .requiredOption("--api-key-env <name>", "environment variable that contains the API key")
+  .requiredOption("--model <model>", "model name to request")
+  .option("--preset <preset>", "probe preset: mini or full", "mini")
+  .option("--languages <languages>", "comma-separated languages: en,zh", "en")
+  .option("--samples <count>", "samples per probe cell", "15")
+  .option("--concurrency <count>", "parallel requests", "1")
+  .option("--timeout-seconds <seconds>", "per-request timeout", "30")
+  .option("--temperature <number>", "sampling temperature", "1")
+  .option("--max-tokens <count>", "completion token cap", "16")
+  .option("--json", "print structured JSON output")
+  .action(async (options) => {
+    const result = await collectModelFingerprint({
+      baseUrl: options.baseUrl,
+      apiKey: readApiKey(options.apiKeyEnv),
+      model: options.model,
+      preset: parseFingerprintPreset(options.preset),
+      languages: parseProbeLanguages(options.languages),
+      samplesPerCell: parseStrictPositiveInteger(options.samples, "samples"),
+      concurrency: parseStrictPositiveInteger(options.concurrency, "concurrency"),
+      timeoutSeconds: parseStrictPositiveInteger(options.timeoutSeconds, "timeout-seconds"),
+      temperature: parseNumber(options.temperature, "temperature"),
+      maxTokens: parseStrictPositiveInteger(options.maxTokens, "max-tokens"),
+      quiet: Boolean(options.json)
+    });
+    if (options.json) {
+      console.log(JSON.stringify({ run: result.run, filePath: result.filePath }));
+      return;
+    }
+    console.log(`Collected ${result.run.samples.length} samples.`);
+    console.log(`Run: ${result.filePath}`);
+  });
+
+fingerprint
+  .command("enroll")
+  .description("Create a named reference profile from a collected fingerprint run.")
+  .requiredOption("--name <name>", "reference profile name")
+  .requiredOption("--from <path>", "fingerprint run JSON path")
+  .action(async (options) => {
+    const result = await enrollModelFingerprint({ name: options.name, from: options.from });
+    console.log(`Enrolled ${result.profile.name}`);
+    console.log(`Profile: ${result.filePath}`);
+  });
+
+fingerprint
+  .command("compare")
+  .description("Compare two saved fingerprint profiles.")
+  .requiredOption("--left <name-or-path>", "left profile name or JSON path")
+  .requiredOption("--right <name-or-path>", "right profile name or JSON path")
+  .option("--json", "print structured JSON output")
+  .action(async (options) => {
+    const result = await compareModelFingerprints({ left: options.left, right: options.right });
+    if (options.json) {
+      console.log(JSON.stringify({
+        left: result.left.name,
+        right: result.right.name,
+        comparison: result.comparison
+      }));
+      return;
+    }
+    console.log(result.report);
+  });
+
+fingerprint
+  .command("audit")
+  .description("Collect a fresh fingerprint and compare it with a saved reference profile.")
+  .requiredOption("--claim <name-or-path>", "claimed reference profile name or JSON path")
+  .requiredOption("--base-url <url>", "OpenAI-compatible API base URL, e.g. https://relay.example.com/v1")
+  .requiredOption("--api-key-env <name>", "environment variable that contains the API key")
+  .requiredOption("--model <model>", "model name to request")
+  .option("--name <name>", "name for this audit profile")
+  .option("--preset <preset>", "probe preset: mini or full", "mini")
+  .option("--languages <languages>", "comma-separated languages: en,zh", "en")
+  .option("--samples <count>", "samples per probe cell", "15")
+  .option("--concurrency <count>", "parallel requests", "1")
+  .option("--timeout-seconds <seconds>", "per-request timeout", "30")
+  .option("--temperature <number>", "sampling temperature", "1")
+  .option("--max-tokens <count>", "completion token cap", "16")
+  .option("--json", "print structured JSON output")
+  .action(async (options) => {
+    const result = await auditModelFingerprint({
+      claim: options.claim,
+      name: options.name,
+      baseUrl: options.baseUrl,
+      apiKey: readApiKey(options.apiKeyEnv),
+      model: options.model,
+      preset: parseFingerprintPreset(options.preset),
+      languages: parseProbeLanguages(options.languages),
+      samplesPerCell: parseStrictPositiveInteger(options.samples, "samples"),
+      concurrency: parseStrictPositiveInteger(options.concurrency, "concurrency"),
+      timeoutSeconds: parseStrictPositiveInteger(options.timeoutSeconds, "timeout-seconds"),
+      temperature: parseNumber(options.temperature, "temperature"),
+      maxTokens: parseStrictPositiveInteger(options.maxTokens, "max-tokens"),
+      quiet: Boolean(options.json)
+    });
+    if (options.json) {
+      console.log(JSON.stringify({
+        claim: result.reference.name,
+        audit: result.profile.name,
+        runPath: result.runPath,
+        comparison: result.comparison
+      }));
+      return;
+    }
+    console.log(result.report);
+    console.log(`\nRun: ${result.runPath}`);
+  });
+
 program
   .command("status")
   .description("[experimental] Show queued tasks.")
@@ -586,6 +706,25 @@ function parseStrictPositiveInteger(value: string | undefined, label: string): n
     throw new Error(`--${label} must be a positive integer.`);
   }
   return parsed;
+}
+
+function parseNumber(value: string | undefined, label: string): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`--${label} must be a number.`);
+  }
+  return parsed;
+}
+
+function readApiKey(envName: string): string {
+  const value = process.env[envName];
+  if (!value) {
+    throw new Error(`Environment variable ${envName} is not set.`);
+  }
+  return value;
 }
 
 function parseRunOptions(
