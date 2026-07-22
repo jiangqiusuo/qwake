@@ -1,0 +1,72 @@
+---
+import BlogLayout from "../../../layouts/BlogLayout.astro";
+import { SITE_URL } from "../../../data/site";
+
+const title = "一个 token 的回答，为什么可能暴露模型行为";
+const description =
+  "解读行为指纹研究：如何用简单随机问题的答案分布，为 OpenAI-compatible 中转站提供模型一致性的统计证据。";
+const jsonLd = [{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: title,
+  description,
+  author: { "@type": "Organization", name: "Qwake" },
+  mainEntityOfPage: `${SITE_URL}/zh-CN/blog/model-behavioral-fingerprinting/`,
+  datePublished: "2026-07-21T00:00:00+08:00",
+  dateModified: "2026-07-21T00:00:00+08:00",
+  image: `${SITE_URL}/og-image.svg`,
+  publisher: { "@type": "Organization", name: "Qwake", url: SITE_URL }
+}];
+---
+
+<BlogLayout
+  locale="zh-CN"
+  title={title}
+  description={description}
+  canonicalPath="/zh-CN/blog/model-behavioral-fingerprinting/"
+  alternatePath="/blog/model-behavioral-fingerprinting/"
+  jsonLd={jsonLd}
+>
+  <p>
+    当一个 API 标注为某个模型时，调用者通常只能相信它。中转站、聚合服务和推理供应商会让服务链更长：同一个模型名可能指向更新后的权重、不同量化版本，甚至另一个模型。Qwake 新增的 <code>fingerprint</code> 是一个实验性工具，目标不是“破解”模型身份，而是把这种相信变成可重复的本地统计检查。
+  </p>
+
+  <h2>研究的核心想法</h2>
+  <p>
+    <a href="https://arxiv.org/abs/2607.10252">《One Token Is Enough》</a>提出了一种很朴素的模型行为指纹：反复问模型“随机给出 1 到 100 的数字”“你最喜欢的颜色是什么”“抛硬币”等短问题，记录它首个短答案的分布。模型虽然被要求随机回答，但它们的输出往往并不均匀；不同模型、不同模型家族会留下不同的分布特征。
+  </p>
+  <p>
+    论文在四种语言、十类任务上采样，用 Jensen-Shannon divergence 比较两个分布。作者报告：同一模型两半样本之间通常比不同模型更接近；完整任务集的验证等错误率为 7.3%，八个 probe cell 也能低于 11%。这使它适合成为“值得继续调查”的低成本证据，而不是身份认证的终点。
+  </p>
+
+  <h2>为什么简单问题反而有用</h2>
+  <p>
+    长篇回答会受到 system prompt、工具调用、上下文和用户任务的强烈影响。这里故意把问题缩短到一个答案即可完成的程度，再限制输出长度，目的是尽量测量模型本身在采样时的偏好。Qwake 的 V1 包含随机数字、喜欢的数字、随机字母、随机或喜欢的颜色、随机动物、抛硬币等任务，并提供英文和中文 probe。
+  </p>
+  <p>
+    默认的 <code>mini</code> preset 有 8 个 cell，每个 cell 采样 15 次；单一语言共 120 次请求。它借鉴了论文中约百次单 token 查询即可形成初步审计信号的结论，但 Qwake 不声称复现论文的全部评测环境或指标。
+  </p>
+
+  <h2>这项能力能回答什么</h2>
+  <ul>
+    <li>同一中转 endpoint 在一段时间内，是否明显偏离你保存的可信基准？</li>
+    <li>两个自称同一模型的 endpoint，短回答分布是否相近？</li>
+    <li>某次供应商切换、路由变更或模型升级后，行为是否发生了值得复查的漂移？</li>
+  </ul>
+
+  <h2>它不能回答什么</h2>
+  <p>
+    它不能证明某个 endpoint 一定使用或一定没有使用某套权重。分布变化也可能来自合理的模型版本更新、量化、解码参数、隐藏 reasoning、区域路由、缓存、内容过滤，或者样本量不足。反过来，两个 endpoint 即使很接近，也不能排除它们恰好共享相似的行为分布。
+  </p>
+  <p>
+    所以正确的结论语言是“与参考指纹一致”“发现显著偏离”“需要复测”，而不是“已经鉴定为某模型”或“确认造假”。在影响采购、合规或安全决策的场景，应把它和供应商证明、版本记录、请求日志、成本与延迟观测一起使用。
+  </p>
+
+  <h2>Qwake 如何实现</h2>
+  <p>
+    Qwake 面向 OpenAI-compatible 的 <code>/chat/completions</code> 接口。它只从指定环境变量读取 API key，不把 key 写入配置、run 文件或报告；采样记录和命名 reference profile 都保存在 <code>~/.qwake/fingerprints/</code>。比较时将各 cell 的规范化答案汇总为经验分布，再计算总体和逐 cell 的差异。
+  </p>
+  <p>
+    下一篇会把这个原则落到操作：先从可信官方或已核验的 endpoint 建立基准，再对需要审计的中转站做一次独立采样和比较。
+  </p>
+</BlogLayout>

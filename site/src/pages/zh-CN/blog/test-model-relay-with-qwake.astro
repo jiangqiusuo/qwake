@@ -1,0 +1,98 @@
+---
+import BlogLayout from "../../../layouts/BlogLayout.astro";
+import { SITE_URL } from "../../../data/site";
+
+const title = "用 Qwake 测试 OpenAI-compatible 中转站";
+const description =
+  "通过建立可信 reference profile、采样目标 endpoint、比较答案分布，完成一次可复查的中转站模型行为审计。";
+const jsonLd = [{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: title,
+  description,
+  author: { "@type": "Organization", name: "Qwake" },
+  mainEntityOfPage: `${SITE_URL}/zh-CN/blog/test-model-relay-with-qwake/`,
+  datePublished: "2026-07-21T00:00:00+08:00",
+  dateModified: "2026-07-21T00:00:00+08:00",
+  image: `${SITE_URL}/og-image.svg`,
+  publisher: { "@type": "Organization", name: "Qwake", url: SITE_URL }
+}];
+---
+
+<BlogLayout
+  locale="zh-CN"
+  title={title}
+  description={description}
+  canonicalPath="/zh-CN/blog/test-model-relay-with-qwake/"
+  alternatePath="/blog/test-model-relay-with-qwake/"
+  jsonLd={jsonLd}
+>
+  <p>
+    本教程使用 Qwake 的实验性 <code>fingerprint</code> 命令审计一个 OpenAI-compatible 中转 endpoint。它只适用于你有权访问和测试的服务。请确认服务条款允许这类采样，并先估算请求成本：默认 mini preset 在单一语言下会发出 120 次很短的请求。
+  </p>
+
+  <h2>开始前的原则</h2>
+  <p>
+    先准备一个可信 reference endpoint。最理想的是模型供应商官方 API 的明确版本；也可以是你已通过其他方法核验、且配置稳定的 endpoint。reference 不可信，之后的比较也没有意义。保持两端使用相同模型名、相同 preset、语言、temperature 和 max tokens。
+  </p>
+
+  <h2>1. 安装并准备 API key</h2>
+  <pre><code>npm install -g @sysiphus/qwake
+
+# 只在当前 shell 中设置，不要放进命令历史、截图或提交到仓库
+export OFFICIAL_API_KEY='replace-with-your-key'
+export RELAY_API_KEY='replace-with-your-key'</code></pre>
+  <p>
+    Qwake 通过 <code>--api-key-env</code> 读取变量，而非命令行直接传入 key。它不会将 key 写入 <code>~/.qwake/fingerprints</code>，但 shell 环境本身仍应妥善保护。
+  </p>
+
+  <h2>2. 为可信端点建立基准</h2>
+  <pre><code>qwake fingerprint collect \
+  --base-url https://api.example.com/v1 \
+  --api-key-env OFFICIAL_API_KEY \
+  --model gpt-4o \
+  --preset mini \
+  --languages en \
+  --samples 15</code></pre>
+  <p>
+    命令完成后会输出 run JSON 路径。用该路径创建一个可读的 reference profile 名称：</p>
+  <pre><code>qwake fingerprint enroll \
+  --name gpt-4o-official-2026-07 \
+  --from ~/.qwake/fingerprints/runs/&lt;run&gt;.json</code></pre>
+  <p>
+    若模型支持中文，建议在单独的 run 中加上 <code>--languages en,zh</code>。不同语言的系统提示与模型表现可能不同，因此比较的两端必须完全一致。成本允许时，也可以采用 <code>--preset full</code> 和更大的 samples 建立更稳定的基准。
+  </p>
+
+  <h2>3. 审计中转 endpoint</h2>
+  <pre><code>qwake fingerprint audit \
+  --claim gpt-4o-official-2026-07 \
+  --base-url https://relay.example.com/v1 \
+  --api-key-env RELAY_API_KEY \
+  --model gpt-4o \
+  --preset mini \
+  --languages en \
+  --samples 15</code></pre>
+  <p>
+    这条命令会采集一份新的 run、临时生成 audit profile，并输出报告。报告有三个结论层次：<code>likely_match</code> 表示与参考分布接近；<code>suspicious_drift</code> 表示存在值得复查的差异；<code>likely_mismatch</code> 表示偏离较大。样本不足或可比 cell 太少时，结果会是 <code>inconclusive</code>。
+  </p>
+
+  <h2>4. 正确解读异常</h2>
+  <p>
+    先复跑一次，不要把单次结果当结论。确认模型名、版本、区域、temperature、max tokens、语言和请求时间段一致；再检查中转站是否启用了缓存、负载均衡、fallback 或隐藏 reasoning。只有排除这些变量后仍然稳定偏离，才应向服务商提出带有 run 文件、配置和时间戳的技术问题。
+  </p>
+  <p>
+    更稳妥的运行方式是：每次重大模型或服务商变更后重新建立 reference，定期把新样本与旧基准做比较，并把结果作为观测记录。它应该帮助你提出更好的问题，而不是替代供应商的透明度承诺。
+  </p>
+
+  <h2>保存在哪里，如何复查</h2>
+  <pre><code>~/.qwake/fingerprints/
+  runs/       # 每次采样的原始规范化结果
+  profiles/   # 命名的 reference profile
+
+qwake fingerprint compare \
+  --left gpt-4o-official-2026-07 \
+  --right ~/.qwake/fingerprints/profiles/another-run.json</code></pre>
+  <p>
+    run 文件不含 API key，但仍可能包含 endpoint URL、模型名和回答统计；在对外分享前，请按你的组织安全规范审查这些信息。
+  </p>
+</BlogLayout>

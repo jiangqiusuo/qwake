@@ -10,6 +10,8 @@ Local-first quota window waker for AI coding agents such as Claude Code, Codex, 
 
 Qwake sends a tiny wake request through the agent command that already works on your machine. It does not bypass provider limits, manage credentials, upload source code, or require a specific official account.
 
+Qwake also includes an experimental model fingerprinting workflow for auditing OpenAI-compatible relay or aggregator endpoints. It samples short answers to simple prompts, builds local behavioral fingerprints, and compares endpoint behavior against a trusted reference profile.
+
 ## Install
 
 ```bash
@@ -36,6 +38,15 @@ qwake schedule test codex claude
 qwake schedule logs
 ```
 
+Audit an OpenAI-compatible relay endpoint:
+
+```bash
+export RELAY_API_KEY=sk-...
+qwake fingerprint collect --base-url https://relay.example.com/v1 --api-key-env RELAY_API_KEY --model gpt-4o --samples 15
+qwake fingerprint enroll --name gpt-4o-reference --from ~/.qwake/fingerprints/runs/<run>.json
+qwake fingerprint audit --claim gpt-4o-reference --base-url https://relay.example.com/v1 --api-key-env RELAY_API_KEY --model gpt-4o --samples 15
+```
+
 Test without any agent login by using the built-in mock agent:
 
 ```bash
@@ -55,6 +66,9 @@ qwake wake custom
 qwake probe claude
 qwake schedule install codex claude --times 06:05,11:10,16:15,21:20
 qwake schedule status codex
+qwake fingerprint collect --base-url https://relay.example.com/v1 --api-key-env RELAY_API_KEY --model gpt-4o
+qwake fingerprint enroll --name gpt-4o-reference --from ~/.qwake/fingerprints/runs/<run>.json
+qwake fingerprint audit --claim gpt-4o-reference --base-url https://relay.example.com/v1 --api-key-env RELAY_API_KEY --model gpt-4o
 qwake schedule doctor
 qwake schedule test codex claude
 qwake schedule run codex claude
@@ -62,6 +76,9 @@ qwake schedule repair codex claude
 qwake schedule repair --all
 qwake schedule logs
 qwake schedule uninstall codex claude
+qwake fingerprint collect --base-url https://relay.example.com/v1 --api-key-env RELAY_API_KEY --model gpt-4o
+qwake fingerprint enroll --name gpt-4o-reference --from ~/.qwake/fingerprints/runs/<run>.json
+qwake fingerprint audit --claim gpt-4o-reference --base-url https://relay.example.com/v1 --api-key-env RELAY_API_KEY --model gpt-4o
 ```
 
 ## Scheduling
@@ -184,6 +201,32 @@ skipped = smart mode avoided a live call because the previous success is still i
 
 Timed out commands use exit code `124` and include `timedOut=true`. The default wake timeout is 120 seconds and can be overridden with `--timeout-seconds`.
 If another wake for the same agent is already running, Qwake logs `status=skipped`.
+
+## Model Fingerprinting
+
+`qwake fingerprint` is an experimental endpoint integrity check inspired by single-token behavioral fingerprinting research. It is designed for OpenAI-compatible APIs, including many relay and aggregator services.
+
+The workflow is:
+
+```bash
+qwake fingerprint collect --base-url https://api.openai.com/v1 --api-key-env OPENAI_API_KEY --model gpt-4o
+qwake fingerprint enroll --name gpt-4o-official --from ~/.qwake/fingerprints/runs/<run>.json
+qwake fingerprint audit --claim gpt-4o-official --base-url https://relay.example.com/v1 --api-key-env RELAY_API_KEY --model gpt-4o
+```
+
+The default `mini` preset asks eight simple probe cells in English, 15 samples each. Use `--languages en,zh` to add Chinese prompts, or `--preset full` for the larger task set.
+
+Qwake stores runs and profiles locally under:
+
+```text
+~/.qwake/fingerprints/
+  runs/
+  profiles/
+```
+
+API keys are read from environment variables and are not written to Qwake config, run files, or reports.
+
+Fingerprint results are statistical evidence, not cryptographic proof. A `likely_mismatch` result means the endpoint's short-answer distribution is far from the saved reference profile; benign causes can include model updates, quantization, serving-provider changes, response caching, or hidden reasoning modes.
 
 ## Notes
 

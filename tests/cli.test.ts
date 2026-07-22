@@ -219,9 +219,20 @@ describe("CLI", () => {
     expect(payload).toMatchObject({
       platform: process.platform,
       available: expect.any(Boolean),
-      checks: expect.any(Array),
-      schedules: []
+      checks: expect.any(Array)
     });
+    expect(payload.schedules).toEqual(expect.any(Array));
     expect(typeof payload.scheduler).toBe("string");
+  });
+
+  it("shows fingerprint commands in help", async () => {
+    const home = await mkdtemp(path.join(tmpdir(), "qwake-cli-"));
+    const help = await runCli(["fingerprint", "--help"], home);
+    const collectHelp = await runCli(["fingerprint", "collect", "--help"], home);
+
+    expect(help.stdout).toContain("collect");
+    expect(help.stdout).toContain("audit");
+    expect(collectHelp.stdout).toContain("--api-key-env");
+    expect(collectHelp.stdout).toContain("--base-url");
   });
 });

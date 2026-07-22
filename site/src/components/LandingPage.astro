@@ -70,6 +70,17 @@ const t = content[locale];
     </div>
   </section>
 
+  <section id="fingerprint">
+    <div class="wrap split">
+      <div>
+        <h2>{t.fingerprintTitle}</h2>
+        <p class="section-lead">{t.fingerprintBody}</p>
+        <p class="callout">{t.fingerprintWarning}</p>
+      </div>
+      <TerminalBlock code={t.fingerprintCode} label="Fingerprint commands" />
+    </div>
+  </section>
+
   <section id="guide">
     <div class="wrap split">
       <div>
@@ -82,6 +93,21 @@ const t = content[locale];
       <div class="card">
         <h3>macOS · Linux · Windows</h3>
         <p>LaunchAgent, systemd/crontab fallback, and Task Scheduler setup paths for Qwake.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="blog">
+    <div class="wrap">
+      <h2>{t.fingerprintBlogTitle}</h2>
+      <div class="grid">
+        {t.fingerprintBlogs.map((blog: { title: string; body: string; href: string; cta: string }) => (
+          <article class="card link-card">
+            <h3>{blog.title}</h3>
+            <p>{blog.body}</p>
+            <p class="card-action"><a href={blog.href}>{blog.cta}</a></p>
+          </article>
+        ))}
       </div>
     </div>
   </section>

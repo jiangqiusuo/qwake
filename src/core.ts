@@ -22,6 +22,15 @@ import { acquireWakeLock } from "./wake-lock.js";
 import { getSmartWakeDecision, recordWakeSuccess } from "./wake-state.js";
 import type { RunAgentResult } from "./types.js";
 import type { AgentName, Task } from "./types.js";
+import { collectFingerprint, profileFromRun, type CollectFingerprintOptions } from "./fingerprint/collector.js";
+import { compareProfiles } from "./fingerprint/metrics.js";
+import { renderComparisonReport } from "./fingerprint/report.js";
+import {
+  readFingerprintProfile,
+  readFingerprintRun,
+  saveFingerprintProfile,
+  saveFingerprintRun
+} from "./fingerprint/store.js";
 
 export async function initialize(force = false): Promise<string> {
   return initConfig({ force });
@@ -272,6 +281,47 @@ export async function repairWakeSchedule(agent: AgentName) {
 
 export async function triggerWakeSchedule(agent: AgentName) {
   return runScheduleNow(agent);
+}
+
+export async function collectModelFingerprint(input: CollectFingerprintOptions) {
+  const run = await collectFingerprint(input);
+  const filePath = await saveFingerprintRun(run);
+  return { run, filePath };
+}
+
+export async function enrollModelFingerprint(input: { name: string; from: string }) {
+  const run = await readFingerprintRun(input.from);
+  const profile = profileFromRun(run, input.name);
+  const filePath = await saveFingerprintProfile(profile);
+  return { profile, filePath };
+}
+
+export async function compareModelFingerprints(input: { left: string; right: string }) {
+  const left = await readFingerprintProfile(input.left);
+  const right = await readFingerprintProfile(input.right);
+  const comparison = compareProfiles(left, right);
+  return {
+    left,
+    right,
+    comparison,
+    report: renderComparisonReport(left, right, comparison)
+  };
+}
+
+export async function auditModelFingerprint(input: CollectFingerprintOptions & { claim: string; name?: string }) {
+  const reference = await readFingerprintProfile(input.claim);
+  const run = await collectFingerprint(input);
+  const runPath = await saveFingerprintRun(run);
+  const profile = profileFromRun(run, input.name || `${input.model}-audit`);
+  const comparison = compareProfiles(reference, profile);
+  return {
+    reference,
+    profile,
+    run,
+    runPath,
+    comparison,
+    report: renderComparisonReport(reference, profile, comparison)
+  };
 }
 
 function trimOutput(output: string, max = 4000): string {

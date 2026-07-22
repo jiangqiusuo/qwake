@@ -263,6 +263,11 @@ section {
   color: var(--muted);
 }
 
+.card-action {
+  margin-top: 16px !important;
+  font-weight: 700;
+}
+
 .split {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
