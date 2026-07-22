@@ -7,13 +7,16 @@ interface Props {
   title: string;
   description: string;
   canonicalPath: string;
+  alternatePath?: string;
   jsonLd: unknown[];
 }
 
-const { locale, title, description, canonicalPath, jsonLd } = Astro.props;
+const { locale, title, description, canonicalPath, alternatePath, jsonLd } = Astro.props;
 const t = content[locale];
 const siteUrl = Astro.site?.toString().replace(/\/$/, "") ?? "https://qwake.top";
 const canonical = `${siteUrl}${canonicalPath}`;
+const alternateLocale = locale === "en" ? "zh-CN" : "en";
+const resolvedAlternatePath = alternatePath ?? locales[alternateLocale].path;
 const ogImage = `${siteUrl}/og-image.svg`;
 const gaId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID;
 const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
@@ -29,9 +32,9 @@ const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
     <meta name="robots" content="index, follow, max-image-preview:large" />
     {gscVerification && <meta name="google-site-verification" content={gscVerification} />}
     <link rel="canonical" href={canonical} />
-    <link rel="alternate" hreflang="en" href={`${siteUrl}${locales.en.path}`} />
-    <link rel="alternate" hreflang="zh-CN" href={`${siteUrl}${locales["zh-CN"].path}`} />
-    <link rel="alternate" hreflang="x-default" href={`${siteUrl}${locales.en.path}`} />
+    <link rel="alternate" hreflang={locale} href={canonical} />
+    <link rel="alternate" hreflang={alternateLocale} href={`${siteUrl}${resolvedAlternatePath}`} />
+    <link rel="alternate" hreflang="x-default" href={locale === "en" ? canonical : `${siteUrl}${resolvedAlternatePath}`} />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -73,13 +76,13 @@ const gscVerification = import.meta.env.PUBLIC_GSC_VERIFICATION;
           <a href="#features">{t.nav.features}</a>
           <a href="#install">{t.nav.install}</a>
           <a href="#schedule">{t.nav.schedule}</a>
-          <a href={locale === "en" ? "/blog/use-qwake-on-macos-windows-linux/" : "/zh-CN/blog/use-qwake-on-macos-windows-linux/"}>{t.nav.blog}</a>
+          <a href={locale === "en" ? "/blog/" : "/zh-CN/blog/"}>{t.nav.blog}</a>
           <a href="#faq">{t.nav.faq}</a>
           <a href={GITHUB_URL}>{t.nav.github}</a>
         </div>
         <div class="langs">
-          <a aria-current={locale === "en" ? "page" : undefined} href="/">EN</a>
-          <a aria-current={locale === "zh-CN" ? "page" : undefined} href="/zh-CN/">中文</a>
+          <a aria-current={locale === "en" ? "page" : undefined} href={locale === "en" ? canonicalPath : resolvedAlternatePath}>EN</a>
+          <a aria-current={locale === "zh-CN" ? "page" : undefined} href={locale === "zh-CN" ? canonicalPath : resolvedAlternatePath}>中文</a>
         </div>
       </nav>
     </header>
