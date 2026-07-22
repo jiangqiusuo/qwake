@@ -1,0 +1,64 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { SITE_URL } from "../../../data/site";
+
+const title = "Qwake 博客";
+const description = "关于 AI 编码任务定时唤醒、可观测性和 OpenAI-compatible 中转站审计的 Qwake 实用指南。";
+const posts = [
+  {
+    title: "如何在 macOS、Linux、Windows 上使用 Qwake",
+    description: "在三个受支持的操作系统上配置、检查与排查 Qwake 定时任务。",
+    category: "定时唤醒",
+    date: "2026-06-01",
+    href: "/zh-CN/blog/use-qwake-on-macos-windows-linux/",
+    alternateHref: "/blog/use-qwake-on-macos-windows-linux/"
+  },
+  {
+    title: "一个 token 的回答，为什么可能暴露模型行为",
+    description: "介绍行为指纹研究，以及中转 endpoint 验证能说明和不能说明的内容。",
+    category: "模型指纹",
+    date: "2026-07-21",
+    href: "/zh-CN/blog/model-behavioral-fingerprinting/",
+    alternateHref: "/blog/model-behavioral-fingerprinting/"
+  },
+  {
+    title: "用 Qwake 测试 OpenAI-compatible 中转站",
+    description: "从建立可信基准到审计中转 endpoint 的本地化、可复查流程。",
+    category: "模型指纹",
+    date: "2026-07-21",
+    href: "/zh-CN/blog/test-model-relay-with-qwake/",
+    alternateHref: "/blog/test-model-relay-with-qwake/"
+  }
+];
+const jsonLd = [{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  name: title,
+  description,
+  url: `${SITE_URL}/zh-CN/blog/`
+}];
+---
+
+<BaseLayout locale="zh-CN" title={title} description={description} canonicalPath="/zh-CN/blog/" alternatePath="/blog/" jsonLd={jsonLd}>
+  <main id="main-content" class="blog-index">
+    <section class="wrap">
+      <div class="blog-index-header">
+        <p class="eyebrow">Qwake 博客</p>
+        <h1>让 AI 工作流更可靠。</h1>
+        <p class="lead">关于定时唤醒、可观测性与中转 endpoint 统计审计的实用指南。</p>
+      </div>
+      <div class="blog-list">
+        {posts.map((post) => (
+          <article class="blog-entry">
+            <p class="blog-entry-meta">{post.category}<br />{post.date}</p>
+            <div>
+              <h2><a href={post.href}>{post.title}</a></h2>
+              <p>{post.description}</p>
+            </div>
+            <a href={post.alternateHref} lang="en">EN</a>
+          </article>
+        ))}
+      </div>
+    </section>
+  </main>
+</BaseLayout>

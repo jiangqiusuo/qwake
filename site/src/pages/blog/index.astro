@@ -1,0 +1,64 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { SITE_URL } from "../../data/site";
+
+const title = "Qwake Blog";
+const description = "Practical Qwake guides for AI coding schedules and OpenAI-compatible relay endpoint audits.";
+const posts = [
+  {
+    title: "How to use Qwake on macOS, Linux, and Windows",
+    description: "Set up, inspect, and troubleshoot Qwake schedules across the three supported operating systems.",
+    category: "Scheduling",
+    date: "2026-06-01",
+    href: "/blog/use-qwake-on-macos-windows-linux/",
+    alternateHref: "/zh-CN/blog/use-qwake-on-macos-windows-linux/"
+  },
+  {
+    title: "Why a one-token answer can reveal a model",
+    description: "The research behind behavioral fingerprints and the limits of relay endpoint verification.",
+    category: "Model fingerprinting",
+    date: "2026-07-21",
+    href: "/blog/model-behavioral-fingerprinting/",
+    alternateHref: "/zh-CN/blog/model-behavioral-fingerprinting/"
+  },
+  {
+    title: "Test an OpenAI-compatible relay with Qwake",
+    description: "Build a trusted reference profile and audit a relay endpoint with a local, repeatable workflow.",
+    category: "Model fingerprinting",
+    date: "2026-07-21",
+    href: "/blog/test-model-relay-with-qwake/",
+    alternateHref: "/zh-CN/blog/test-model-relay-with-qwake/"
+  }
+];
+const jsonLd = [{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  name: title,
+  description,
+  url: `${SITE_URL}/blog/`
+}];
+---
+
+<BaseLayout locale="en" title={title} description={description} canonicalPath="/blog/" alternatePath="/zh-CN/blog/" jsonLd={jsonLd}>
+  <main id="main-content" class="blog-index">
+    <section class="wrap">
+      <div class="blog-index-header">
+        <p class="eyebrow">Qwake blog</p>
+        <h1>Guides for reliable AI workflows.</h1>
+        <p class="lead">Scheduling, observability, and evidence-based relay endpoint checks.</p>
+      </div>
+      <div class="blog-list">
+        {posts.map((post) => (
+          <article class="blog-entry">
+            <p class="blog-entry-meta">{post.category}<br />{post.date}</p>
+            <div>
+              <h2><a href={post.href}>{post.title}</a></h2>
+              <p>{post.description}</p>
+            </div>
+            <a href={post.alternateHref} lang="zh-CN">中文</a>
+          </article>
+        ))}
+      </div>
+    </section>
+  </main>
+</BaseLayout>
